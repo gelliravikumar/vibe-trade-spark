@@ -14,6 +14,7 @@ import {
   Sun, 
   Moon 
 } from 'lucide-react';
+import { UserProfile } from '@/components/profile/UserProfile';
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -33,11 +34,26 @@ export const Navbar: React.FC = () => {
 
   // Handle dark mode toggle
   useEffect(() => {
+    // Check if dark mode is set in localStorage or prefer-color-scheme
+    const savedDarkMode = localStorage.getItem('tradingApp_darkMode');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedDarkMode) {
+      setIsDarkMode(savedDarkMode === 'true');
+    } else {
+      setIsDarkMode(prefersDark);
+    }
+  }, []);
+  
+  useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
+    
+    // Save preference to localStorage
+    localStorage.setItem('tradingApp_darkMode', isDarkMode.toString());
   }, [isDarkMode]);
 
   // Navigation items
@@ -102,6 +118,9 @@ export const Navbar: React.FC = () => {
             >
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
+            
+            {/* User profile */}
+            <UserProfile />
 
             {/* Mobile menu button */}
             <button

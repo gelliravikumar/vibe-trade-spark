@@ -13,6 +13,26 @@ const Trade = () => {
   const { isLoading, refreshData } = useData();
   
   useEffect(() => {
+    // Load stored settings from localStorage
+    const loadStoredSettings = () => {
+      try {
+        const apiProvider = localStorage.getItem('tradingApp_apiProvider');
+        const connectionMethod = localStorage.getItem('tradingApp_connectionMethod');
+        const useDummyData = localStorage.getItem('tradingApp_useDummyData');
+        
+        // Check if we have valid settings
+        if (apiProvider && connectionMethod && useDummyData !== null) {
+          console.log('Loaded settings from localStorage');
+        } else {
+          console.log('No stored settings found, using defaults');
+        }
+      } catch (error) {
+        console.error('Error loading settings from localStorage:', error);
+      }
+    };
+    
+    loadStoredSettings();
+    
     // Refresh data when the trade page loads
     refreshData().catch(error => {
       toast.error("Failed to load market data. Please try again.");
