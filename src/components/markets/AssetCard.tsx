@@ -46,6 +46,20 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   
   const isPositive = change >= 0;
   
+  // Safe formatting to handle null/undefined
+  const formatPrice = (value: number | undefined | null) => {
+    if (value === undefined || value === null) return '0.00';
+    return value.toLocaleString('en-IN', {
+      maximumFractionDigits: value < 1 ? 6 : 2,
+      minimumFractionDigits: value < 1 ? 2 : 2,
+    });
+  };
+  
+  const formatChange = (value: number | undefined | null) => {
+    if (value === undefined || value === null) return '0.00';
+    return value.toFixed(2);
+  };
+  
   return (
     <Link
       to={`/trade/${symbol}`}
@@ -69,10 +83,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             }`}
           >
             {type === 'CRYPTO' && '₹'}
-            {price.toLocaleString('en-IN', {
-              maximumFractionDigits: price < 1 ? 6 : 2,
-              minimumFractionDigits: price < 1 ? 2 : 2,
-            })}
+            {formatPrice(price)}
           </p>
           
           <div className="flex items-center space-x-1 mt-1">
@@ -83,7 +94,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             )}
             <span className={isPositive ? 'text-success' : 'text-destructive'}>
               {isPositive ? '+' : ''}
-              {change.toFixed(2)} ({changePercent.toFixed(2)}%)
+              {formatChange(change)} ({formatChange(changePercent)}%)
             </span>
           </div>
         </div>

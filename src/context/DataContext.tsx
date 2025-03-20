@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { ApiProvider, ConnectionMethod, DataType, fetchMarketData, createWebSocketConnection, closeWebSocketConnection, getConnectionStatus } from '../data/api';
 import { stockData } from '../data/stocksData';
 import { cryptoData } from '../data/cryptoData';
@@ -33,29 +33,93 @@ const defaultContextValue: DataContextType = {
   refreshData: async () => {},
 };
 
+// Local storage keys
+const LS_KEY_PREFIX = 'tradingApp_';
+const LS_KEYS = {
+  apiProvider: `${LS_KEY_PREFIX}apiProvider`,
+  connectionMethod: `${LS_KEY_PREFIX}connectionMethod`,
+  useDummyData: `${LS_KEY_PREFIX}useDummyData`,
+};
+
+// Helper to get values from localStorage with fallbacks
+const getFromLS = <T extends string | boolean>(key: string, defaultValue: T): T => {
+  try {
+    const storedValue = localStorage.getItem(key);
+    if (storedValue === null) return defaultValue;
+    return (typeof defaultValue === 'boolean') 
+      ? (storedValue === 'true') as T
+      : storedValue as T;
+  } catch (error) {
+    console.error('Error reading from localStorage:', error);
+    return defaultValue;
+  }
+};
+
+// Helper to set values in localStorage
+const setToLS = (key: string, value: string | boolean): void => {
+  try {
+    localStorage.setItem(key, value.toString());
+  } catch (error) {
+    console.error('Error writing to localStorage:', error);
+  }
+};
+
 const DataContext = createContext<DataContextType>(defaultContextValue);
 
 export const useData = () => useContext(DataContext);
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Initialize state with localStorage values if available
   const [isLoading, setIsLoading] = useState(true);
-  const [apiProvider, setApiProvider] = useState<ApiProvider>('DUMMY');
-  const [connectionMethod, setConnectionMethod] = useState<ConnectionMethod>('WEBSOCKET');
-  const [useDummyData, setUseDummyData] = useState(true);
+  const [apiProvider, setApiProviderState] = useState<ApiProvider>(
+    getFromLS(LS_KEYS.apiProvider, 'DUMMY') as ApiProvider
+  );
+  const [connectionMethod, setConnectionMethodState] = useState<ConnectionMethod>(
+    getFromLS(LS_KEYS.connectionMethod, 'WEBSOCKET') as ConnectionMethod
+  );
+  const [useDummyData, setUseDummyDataState] = useState<boolean>(
+    getFromLS(LS_KEYS.useDummyData, true)
+  );
   const [stocksData, setStocksData] = useState<any[]>(stockData);
   const [cryptos, setCryptoData] = useState<any[]>(cryptoData);
   const [connectionStatus, setConnectionStatus] = useState(getConnectionStatus());
+  const [dataFetchPromise, setDataFetchPromise] = useState<Promise<void> | null>(null);
+
+  // Wrapper functions to update localStorage when state changes
+  const setApiProvider = useCallback((provider: ApiProvider) => {
+    setApiProviderState(provider);
+    setToLS(LS_KEYS.apiProvider, provider);
+  }, []);
+
+  const setConnectionMethod = useCallback((method: ConnectionMethod) => {
+    setConnectionMethodState(method);
+    setToLS(LS_KEYS.connectionMethod, method);
+  }, []);
+
+  const setUseDummyData = useCallback((use: boolean) => {
+    setUseDummyDataState(use);
+    setToLS(LS_KEYS.useDummyData, use);
+  }, []);
 
   // Fetch initial data
   useEffect(() => {
-    refreshData();
+    if (!dataFetchPromise) {
+      const promise = refreshData();
+      setDataFetchPromise(promise);
+      
+      promise.finally(() => {
+        setDataFetchPromise(null);
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiProvider, useDummyData]);
 
   // Handle connection method changes
   useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    
     if (connectionMethod === 'WEBSOCKET') {
-      initializeWebSocket();
+      cleanup = initializeWebSocket();
     } else {
       // Close any existing websocket when switching to REST
       closeWebSocketConnection();
@@ -63,28 +127,38 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       // Set up polling interval for REST
       const intervalId = setInterval(() => {
-        refreshData();
+        if (!dataFetchPromise) {
+          const promise = refreshData();
+          setDataFetchPromise(promise);
+          
+          promise.finally(() => {
+            setDataFetchPromise(null);
+          });
+        }
       }, 10000); // Poll every 10 seconds
       
-      return () => clearInterval(intervalId);
+      cleanup = () => clearInterval(intervalId);
     }
     
-    return () => closeWebSocketConnection();
+    return () => {
+      if (cleanup) cleanup();
+      closeWebSocketConnection();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectionMethod, apiProvider, useDummyData]);
 
-  const updateConnectionStatus = () => {
+  const updateConnectionStatus = useCallback(() => {
     setConnectionStatus(getConnectionStatus());
-  };
+  }, []);
 
-  const initializeWebSocket = () => {
+  const initializeWebSocket = useCallback(() => {
     // Get symbols from current data
     const stockSymbols = stocksData.map(stock => stock.symbol);
     const cryptoSymbols = cryptos.map(crypto => crypto.symbol);
     const allSymbols = [...stockSymbols, ...cryptoSymbols];
     
     // Create websocket connection
-    createWebSocketConnection(
+    const cleanup = createWebSocketConnection(
       useDummyData ? 'DUMMY' : apiProvider,
       allSymbols,
       handleWebSocketMessage,
@@ -96,11 +170,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     return () => {
       clearInterval(statusInterval);
-      closeWebSocketConnection();
+      if (cleanup) cleanup();
     };
-  };
+  }, [apiProvider, cryptos, stocksData, updateConnectionStatus, useDummyData]);
 
-  const handleWebSocketMessage = (data: any) => {
+  const handleWebSocketMessage = useCallback((data: any) => {
     if (Array.isArray(data)) {
       // Handle dummy data format
       const stockUpdates = data.filter(item => item.type === 'STOCK');
@@ -147,15 +221,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error('Error processing websocket message:', error);
       }
     }
-  };
+  }, [apiProvider]);
 
-  const handleWebSocketError = (error: any) => {
+  const handleWebSocketError = useCallback((error: any) => {
     console.error('WebSocket error:', error);
     toast.error('WebSocket connection error. Switching to dummy data.');
     setUseDummyData(true);
-  };
+  }, [setUseDummyData]);
 
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     setIsLoading(true);
     
     try {
@@ -180,7 +254,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       setIsLoading(false);
     }
-  };
+    
+    return Promise.resolve();
+  }, [apiProvider, updateConnectionStatus, useDummyData]);
 
   return (
     <DataContext.Provider

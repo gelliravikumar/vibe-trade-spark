@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DetailedChart } from '@/components/charts/DetailedChart';
 import { DataSourceSelector } from '@/components/ui/DataSourceSelector';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useData } from '@/context/DataContext';
 import { ArrowLeft, Info, BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
+import { AssetList } from '@/components/markets/AssetList';
 
 export const TradingTerminal: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
@@ -14,12 +15,28 @@ export const TradingTerminal: React.FC = () => {
   const [quantity, setQuantity] = useState<string>('1');
   
   // Find the asset data
-  const asset = [...stocksData, ...cryptoData].find(asset => asset.symbol === symbol);
+  const asset = symbol ? [...stocksData, ...cryptoData].find(asset => asset.symbol === symbol) : null;
   
   const handleBack = () => {
     navigate(-1);
   };
   
+  // If no symbol is provided, show a list of assets to choose from
+  if (!symbol) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 pt-20 pb-10">
+        <h1 className="text-2xl font-bold mb-6">Select an Asset to Trade</h1>
+        
+        <div className="mb-6">
+          <DataSourceSelector />
+        </div>
+        
+        <AssetList type="ALL" showSearch={true} />
+      </div>
+    );
+  }
+  
+  // If symbol is provided but asset not found
   if (!asset) {
     return (
       <div className="max-w-7xl mx-auto px-4 pt-20 pb-10">

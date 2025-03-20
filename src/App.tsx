@@ -10,6 +10,8 @@ import Markets from "./pages/Markets";
 import Trade from "./pages/Trade";
 import Portfolio from "./pages/Portfolio";
 import Settings from "./pages/Settings";
+import News from "./pages/News";
+import Community from "./pages/Community";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,8 @@ const App = () => (
             <Route path="/trade/:symbol" element={<Trade />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/news" element={<News />} />
+            <Route path="/community" element={<Community />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
