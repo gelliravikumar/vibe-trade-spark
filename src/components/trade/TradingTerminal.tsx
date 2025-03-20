@@ -7,8 +7,11 @@ import { useData } from '@/context/DataContext';
 import { ArrowLeft, Info, BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
 import { AssetList } from '@/components/markets/AssetList';
 
-export const TradingTerminal: React.FC = () => {
-  const { symbol } = useParams<{ symbol: string }>();
+interface TradingTerminalProps {
+  symbol?: string;
+}
+
+export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
   const navigate = useNavigate();
   const { stocksData, cryptoData } = useData();
   const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
