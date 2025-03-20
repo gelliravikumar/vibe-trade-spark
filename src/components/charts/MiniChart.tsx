@@ -7,6 +7,13 @@ interface MiniChartProps {
   color?: string;
   height?: number;
   isPositive?: boolean;
+  symbol?: string;
+  type?: string;
+  width?: number;
+  showChart?: boolean;
+  showTooltip?: boolean;
+  positiveColor?: string;
+  negativeColor?: string;
 }
 
 // Generate random price history if none provided
@@ -22,10 +29,17 @@ export const MiniChart: React.FC<MiniChartProps> = ({
   data, 
   color = 'currentColor',
   height = 40,
-  isPositive = true
+  isPositive = true,
+  symbol,
+  type,
+  width,
+  showChart = true,
+  showTooltip = false,
+  positiveColor = 'var(--success)',
+  negativeColor = 'var(--destructive)'
 }) => {
   const [chartData, setChartData] = useState<{ price: number }[]>([]);
-  const chartColor = isPositive ? 'var(--success)' : 'var(--destructive)';
+  const chartColor = isPositive ? positiveColor : negativeColor;
   
   useEffect(() => {
     if (data && data.length > 0) {
@@ -35,8 +49,12 @@ export const MiniChart: React.FC<MiniChartProps> = ({
     }
   }, [data]);
 
+  if (!showChart) {
+    return null;
+  }
+
   return (
-    <div className="w-full h-full" style={{ height }}>
+    <div className="w-full h-full" style={{ height, width: width || '100%' }}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
           <Line 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DetailedChart } from '@/components/charts/DetailedChart';
 import { DataSourceSelector } from '@/components/ui/DataSourceSelector';
@@ -34,6 +33,14 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
 import { toast } from 'sonner';
 
 interface TradingTerminalProps {
@@ -48,7 +55,6 @@ interface UserPortfolio {
   };
 }
 
-// Mock portfolio data
 const mockPortfolio: UserPortfolio = {
   'RELIANCE': {
     quantity: 10,
@@ -82,10 +88,8 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [portfolioData, setPortfolioData] = useState<UserPortfolio>(mockPortfolio);
   
-  // Find the asset data
   const asset = symbol ? [...stocksData, ...cryptoData].find(asset => asset.symbol === symbol) : null;
   
-  // Calculate order total when quantity or price changes
   useEffect(() => {
     if (asset) {
       const numQuantity = parseFloat(quantity) || 0;
@@ -94,7 +98,6 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
     }
   }, [quantity, asset]);
   
-  // Set the current market price as the default price
   useEffect(() => {
     if (asset) {
       setPrice(asset.price.toString());
@@ -116,9 +119,7 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
       return;
     }
     
-    // In a real app, this would call an API to place the order
     if (orderType === 'buy') {
-      // Update portfolio for buy order
       setPortfolioData(prev => {
         const existingPosition = prev[asset.symbol];
         const newQuantity = existingPosition ? existingPosition.quantity + numQuantity : numQuantity;
@@ -134,7 +135,6 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
         };
       });
     } else {
-      // Update portfolio for sell order
       setPortfolioData(prev => {
         const existingPosition = prev[asset.symbol];
         
@@ -167,10 +167,8 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
     setQuantity('1');
   };
   
-  // Get user's portfolio position for this asset
   const assetPortfolio = asset && portfolioData[asset.symbol];
   
-  // If no symbol is provided, show a list of assets to choose from
   if (!symbol) {
     return (
       <div className="max-w-7xl mx-auto px-4 pt-20 pb-10">
@@ -216,7 +214,6 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
     );
   }
   
-  // If symbol is provided but asset not found
   if (!asset) {
     return (
       <div className="max-w-7xl mx-auto px-4 pt-20 pb-10">
@@ -247,7 +244,6 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3 space-y-6">
-          {/* Asset header */}
           <div className="glass-card rounded-lg p-5">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
               <div>
@@ -279,12 +275,10 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
             </div>
           </div>
           
-          {/* Chart */}
           <div className="glass-card rounded-lg p-5">
             <DetailedChart symbol={asset.symbol} type={asset.type} />
           </div>
           
-          {/* Asset information tabs */}
           <Tabs defaultValue="info" className="w-full">
             <TabsList className="w-full mb-4">
               <TabsTrigger value="info" className="flex items-center">
@@ -787,7 +781,6 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
         </div>
         
         <div className="space-y-6">
-          {/* Data source selection */}
           <div className="glass-card rounded-lg p-5">
             <h2 className="text-lg font-semibold mb-4 flex items-center">
               <BarChart3 className="w-5 h-5 mr-2" />
@@ -797,143 +790,5 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
             <DataSourceSelector />
           </div>
           
-          {/* User's position */}
-          {assetPortfolio && (
-            <div className="glass-card rounded-lg p-5">
-              <h2 className="text-lg font-semibold mb-4 flex items-center">
-                <CreditCard className="w-5 h-5 mr-2" />
-                Your Position
-              </h2>
-              
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Quantity</span>
-                  <span className="font-semibold">{assetPortfolio.quantity.toLocaleString('en-IN')}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Avg. Cost</span>
-                  <span className="font-semibold">₹{assetPortfolio.avgPrice.toFixed(2)}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Current Value</span>
-                  <span className="font-semibold">₹{(assetPortfolio.quantity * asset.price).toLocaleString('en-IN', {
-                    maximumFractionDigits: 2
-                  })}</span>
-                </div>
-                
-                <Separator />
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">P&L</span>
-                  <div className={`font-semibold ${
-                    assetPortfolio.quantity * asset.price > assetPortfolio.totalInvestment 
-                      ? 'text-success' 
-                      : 'text-destructive'
-                  }`}>
-                    {assetPortfolio.quantity * asset.price > assetPortfolio.totalInvestment ? '+' : ''}
-                    ₹{(assetPortfolio.quantity * asset.price - assetPortfolio.totalInvestment).toLocaleString('en-IN', {
-                      maximumFractionDigits: 2
-                    })}
-                    {' '}
-                    ({((assetPortfolio.quantity * asset.price - assetPortfolio.totalInvestment) / assetPortfolio.totalInvestment * 100).toFixed(2)}%)
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Trading panel */}
-          <div className="glass-card rounded-lg p-5">
-            <h2 className="text-lg font-semibold mb-4 flex items-center">
-              <Calculator className="w-5 h-5 mr-2" />
-              Place Order
-            </h2>
-            
-            <div className="space-y-4">
-              <div className="flex rounded-md overflow-hidden">
-                <button
-                  className={`flex-1 py-2 text-center transition-colors ${
-                    orderType === 'buy'
-                      ? 'bg-success text-success-foreground'
-                      : 'bg-secondary text-secondary-foreground'
-                  }`}
-                  onClick={() => setOrderType('buy')}
-                >
-                  Buy
-                </button>
-                <button
-                  className={`flex-1 py-2 text-center transition-colors ${
-                    orderType === 'sell'
-                      ? 'bg-destructive text-destructive-foreground'
-                      : 'bg-secondary text-secondary-foreground'
-                  }`}
-                  onClick={() => setOrderType('sell')}
-                >
-                  Sell
-                </button>
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="quantity" className="block text-sm">
-                  Quantity
-                </label>
-                <input
-                  id="quantity"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="price" className="block text-sm">
-                  Price (₹)
-                </label>
-                <input
-                  id="price"
-                  type="number"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2"
-                  value={asset.price.toString()}
-                  disabled
-                />
-                <div className="text-xs text-muted-foreground">
-                  Live market price
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Est. Value</span>
-                  <span className="font-medium">
-                    ₹{orderTotal.toLocaleString('en-IN', {
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                </div>
-              </div>
-              
-              <button
-                className={orderType === 'buy' ? 'btn-primary w-full bg-success hover:bg-success/90' : 'btn-primary w-full bg-destructive hover:bg-destructive/90'}
-                onClick={handlePlaceOrder}
-              >
-                {orderType === 'buy' ? 'Buy' : 'Sell'} {asset.symbol}
-              </button>
-              
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                Demo mode: No real transactions are being made
-              </p>
-            </div>
-          </div>
-          
-          {/* Watchlist */}
-          <WatchlistManager />
-        </div>
-      </div>
-    </div>
-  );
-};
+          {
+
