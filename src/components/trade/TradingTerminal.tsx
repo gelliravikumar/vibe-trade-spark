@@ -43,6 +43,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { toast } from 'sonner';
+import { MiniChart } from '@/components/charts/MiniChart';
 
 interface TradingTerminalProps {
   symbol?: string;
@@ -890,7 +891,7 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
               <Star className="w-5 h-5 mr-2" />
               Watchlist
             </h2>
-            <WatchlistManager selectedAsset={asset.symbol} />
+            <WatchlistManager />
           </div>
         </div>
       </div>
