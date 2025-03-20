@@ -35,7 +35,7 @@ const Trade = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <TradingTerminal />
+      <TradingTerminal symbol={symbol} />
       <Footer />
     </div>
   );

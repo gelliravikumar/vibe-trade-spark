@@ -3,8 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
-  CandlestickChart,
-  Candlestick,
   Area,
   Line,
   Bar,
@@ -14,7 +12,8 @@ import {
   Tooltip,
   Legend,
   ReferenceArea,
-  Brush
+  Brush,
+  Scatter
 } from 'recharts';
 import { Loader } from '@/components/common/Loader';
 import { Settings2 } from 'lucide-react';
@@ -77,6 +76,83 @@ const generateChartData = (
       signal: (Math.random() - 0.5) * 3, // Random signal line
     };
   });
+};
+
+// Custom candle renderer for candlestick charts using rectangles
+const CustomCandlestick = ({ 
+  x, 
+  y, 
+  width, 
+  height, 
+  low, 
+  high, 
+  open, 
+  close 
+}: { 
+  x: number; 
+  y: number; 
+  width: number; 
+  height: number; 
+  low: number; 
+  high: number; 
+  open: number; 
+  close: number; 
+}) => {
+  const isIncreasing = close > open;
+  const color = isIncreasing ? 'var(--success)' : 'var(--destructive)';
+  const bodyY = isIncreasing ? y + (open - low) / (high - low) * height : y + (close - low) / (high - low) * height;
+  const bodyHeight = isIncreasing 
+    ? (close - open) / (high - low) * height 
+    : (open - close) / (high - low) * height;
+
+  // Calculate wick positions
+  const wickX = x + width / 2;
+  const wickTopY = y;
+  const wickBottomY = y + height;
+  const bodyWidth = Math.max(width, 1);  // Ensure body has at least 1px width
+
+  return (
+    <g>
+      {/* Wick line */}
+      <line
+        x1={wickX}
+        y1={wickTopY}
+        x2={wickX}
+        y2={wickBottomY}
+        stroke="var(--muted-foreground)"
+        strokeWidth={1}
+      />
+      {/* Candle body */}
+      <rect
+        x={x}
+        y={bodyY}
+        width={bodyWidth}
+        height={Math.max(bodyHeight, 1)}  // Ensure body has at least 1px height
+        fill={color}
+        stroke={color}
+      />
+    </g>
+  );
+};
+
+// Render candlesticks using rectangles and lines
+const renderCandlestickItem = (props: any) => {
+  const { x, y, width, height, index, payload } = props;
+  const { low, high, open, close } = payload;
+  
+  return (
+    <CustomCandlestick
+      key={`candle-${index}`}
+      x={x - width / 2}
+      y={y}
+      width={width}
+      height={height}
+      low={low}
+      high={high}
+      open={open}
+      close={close}
+    />
+  );
 };
 
 export const DetailedChart: React.FC<DetailedChartProps> = ({ 
@@ -350,7 +426,7 @@ export const DetailedChart: React.FC<DetailedChartProps> = ({
       >
         {chartType === 'candle' ? (
           <ResponsiveContainer width="100%" height="100%">
-            <CandlestickChart
+            <ComposedChart
               data={data}
               margin={{ top: 10, right: 30, left: 10, bottom: 30 }}
             >
@@ -379,13 +455,14 @@ export const DetailedChart: React.FC<DetailedChartProps> = ({
               />
               <Legend />
               
-              <Candlestick
-                yAxisId="price"
+              {/* Custom Candlestick Chart using Scatter with CustomShape */}
+              <Scatter
                 name="Price"
+                data={data}
+                shape={renderCandlestickItem}
+                yAxisId="price"
                 fill="var(--success)"
                 stroke="var(--success)"
-                wickStroke="var(--muted-foreground)"
-                activeFill="var(--primary)"
               />
               
               {/* Reference area for zoom */}
@@ -407,7 +484,7 @@ export const DetailedChart: React.FC<DetailedChartProps> = ({
                 fill="var(--background)"
                 tickFormatter={(value) => ''}
               />
-            </CandlestickChart>
+            </ComposedChart>
           </ResponsiveContainer>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
