@@ -1,44 +1,52 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { DataProvider } from "@/context/DataContext";
-import Index from "./pages/Index";
-import Markets from "./pages/Markets";
-import Trade from "./pages/Trade";
-import Portfolio from "./pages/Portfolio";
-import Settings from "./pages/Settings";
-import News from "./pages/News";
-import Community from "./pages/Community";
-import NotFound from "./pages/NotFound";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Index from './pages/Index';
+import Markets from './pages/Markets';
+import News from './pages/News';
+import Portfolio from './pages/Portfolio';
+import Community from './pages/Community';
+import Settings from './pages/Settings';
+import Trade from './pages/Trade';
+import NotFound from './pages/NotFound';
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from './components/ui/theme-provider';
+import { Toaster } from './components/ui/toaster';
+import { DataProvider } from './context/DataContext';
+import { PortfolioProvider } from './hooks/use-portfolio';
+import { TooltipProvider } from '@radix-ui/react-tooltip';
+
+// Create a client
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <DataProvider>
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/markets" element={<Markets />} />
-            <Route path="/trade" element={<Trade />} />
-            <Route path="/trade/:symbol" element={<Trade />} />
-            <Route path="/portfolio" element={<Portfolio />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/news" element={<News />} />
-            <Route path="/community" element={<Community />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <DataProvider>
+          <PortfolioProvider>
+            <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+              <Router>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/markets" element={<Markets />} />
+                  <Route path="/news" element={<News />} />
+                  <Route path="/portfolio" element={<Portfolio />} />
+                  <Route path="/community" element={<Community />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/trade" element={<Trade />} />
+                  <Route path="/trade/:symbol" element={<Trade />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Router>
+              <Toaster />
+            </ThemeProvider>
+          </PortfolioProvider>
+        </DataProvider>
       </TooltipProvider>
-    </DataProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+}
 
 export default App;

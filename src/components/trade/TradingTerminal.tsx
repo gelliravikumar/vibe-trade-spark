@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { DetailedChart } from '@/components/charts/DetailedChart';
 import { DataSourceSelector } from '@/components/ui/DataSourceSelector';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useData } from '@/context/DataContext';
 import { 
   ArrowLeft, 
@@ -18,15 +18,12 @@ import {
   PieChart,
   Users,
   Calendar,
-  CreditCard,
-  Calculator,
   Star
 } from 'lucide-react';
 import { AssetList } from '@/components/markets/AssetList';
 import { AssetTable } from '@/components/markets/AssetTable';
 import { WatchlistManager } from '@/components/watchlist/WatchlistManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { 
   Card, 
   CardContent, 
@@ -42,134 +39,23 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { toast } from 'sonner';
 import { MiniChart } from '@/components/charts/MiniChart';
+import { TradingForm } from '@/components/trade/TradingForm';
 
 interface TradingTerminalProps {
   symbol?: string;
 }
 
-interface UserPortfolio {
-  [symbol: string]: {
-    quantity: number;
-    avgPrice: number;
-    totalInvestment: number;
-  };
-}
-
-const mockPortfolio: UserPortfolio = {
-  'RELIANCE': {
-    quantity: 10,
-    avgPrice: 2850.75,
-    totalInvestment: 28507.50
-  },
-  'TCS': {
-    quantity: 5,
-    avgPrice: 3575.20,
-    totalInvestment: 17876.00
-  },
-  'INFY': {
-    quantity: 15,
-    avgPrice: 1620.50,
-    totalInvestment: 24307.50
-  },
-  'BTC': {
-    quantity: 0.15,
-    avgPrice: 52000.00,
-    totalInvestment: 7800.00
-  }
-};
-
 export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
   const navigate = useNavigate();
   const { stocksData, cryptoData } = useData();
-  const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
-  const [quantity, setQuantity] = useState<string>('1');
-  const [price, setPrice] = useState<string>('');
-  const [orderTotal, setOrderTotal] = useState<number>(0);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
-  const [portfolioData, setPortfolioData] = useState<UserPortfolio>(mockPortfolio);
   
   const asset = symbol ? [...stocksData, ...cryptoData].find(asset => asset.symbol === symbol) : null;
-  
-  useEffect(() => {
-    if (asset) {
-      const numQuantity = parseFloat(quantity) || 0;
-      const assetPrice = asset.price;
-      setOrderTotal(numQuantity * assetPrice);
-    }
-  }, [quantity, asset]);
-  
-  useEffect(() => {
-    if (asset) {
-      setPrice(asset.price.toString());
-    }
-  }, [asset]);
   
   const handleBack = () => {
     navigate(-1);
   };
-  
-  const handlePlaceOrder = () => {
-    if (!asset) return;
-    
-    const orderAction = orderType === 'buy' ? 'bought' : 'sold';
-    const numQuantity = parseFloat(quantity);
-    
-    if (isNaN(numQuantity) || numQuantity <= 0) {
-      toast.error("Please enter a valid quantity");
-      return;
-    }
-    
-    if (orderType === 'buy') {
-      setPortfolioData(prev => {
-        const existingPosition = prev[asset.symbol];
-        const newQuantity = existingPosition ? existingPosition.quantity + numQuantity : numQuantity;
-        const newInvestment = existingPosition ? existingPosition.totalInvestment + orderTotal : orderTotal;
-        
-        return {
-          ...prev,
-          [asset.symbol]: {
-            quantity: newQuantity,
-            avgPrice: newInvestment / newQuantity,
-            totalInvestment: newInvestment
-          }
-        };
-      });
-    } else {
-      setPortfolioData(prev => {
-        const existingPosition = prev[asset.symbol];
-        
-        if (!existingPosition || existingPosition.quantity < numQuantity) {
-          toast.error("Cannot sell more than you own");
-          return prev;
-        }
-        
-        const newQuantity = existingPosition.quantity - numQuantity;
-        const newInvestment = existingPosition.totalInvestment * (newQuantity / existingPosition.quantity);
-        
-        if (newQuantity <= 0) {
-          const newPortfolio = { ...prev };
-          delete newPortfolio[asset.symbol];
-          return newPortfolio;
-        }
-        
-        return {
-          ...prev,
-          [asset.symbol]: {
-            quantity: newQuantity,
-            avgPrice: newInvestment / newQuantity,
-            totalInvestment: newInvestment
-          }
-        };
-      });
-    }
-    
-    toast.success(`Successfully ${orderAction} ${quantity} ${asset.symbol} for ₹${orderTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`);
-    setQuantity('1');
-  };
-  
-  const assetPortfolio = asset && portfolioData[asset.symbol];
   
   if (!symbol) {
     return (
@@ -792,99 +678,7 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
             <DataSourceSelector />
           </div>
           
-          <div className="glass-card rounded-lg p-5">
-            <h2 className="text-lg font-semibold mb-4 flex items-center">
-              <Calculator className="w-5 h-5 mr-2" />
-              Place Order
-            </h2>
-            
-            <div className="flex gap-2 mb-4">
-              <button
-                className={`flex-1 py-2 px-4 rounded-lg font-medium ${
-                  orderType === 'buy' 
-                    ? 'bg-success/10 text-success border border-success' 
-                    : 'bg-muted text-muted-foreground border border-transparent'
-                }`}
-                onClick={() => setOrderType('buy')}
-              >
-                Buy
-              </button>
-              <button
-                className={`flex-1 py-2 px-4 rounded-lg font-medium ${
-                  orderType === 'sell' 
-                    ? 'bg-destructive/10 text-destructive border border-destructive' 
-                    : 'bg-muted text-muted-foreground border border-transparent'
-                }`}
-                onClick={() => setOrderType('sell')}
-              >
-                Sell
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Price (₹)
-                </label>
-                <input
-                  type="text"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="w-full p-2 border rounded-lg bg-muted"
-                  readOnly
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Quantity
-                </label>
-                <input
-                  type="number"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  className="w-full p-2 border rounded-lg bg-muted"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-              
-              {assetPortfolio && (
-                <div className="p-3 rounded-lg bg-secondary/20 mt-4">
-                  <h3 className="font-medium mb-2">Your Position</h3>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>Holding:</div>
-                    <div className="text-right font-medium">{assetPortfolio.quantity} {asset.symbol}</div>
-                    <div>Avg. Cost:</div>
-                    <div className="text-right font-medium">₹{assetPortfolio.avgPrice.toFixed(2)}</div>
-                    <div>Investment:</div>
-                    <div className="text-right font-medium">₹{assetPortfolio.totalInvestment.toFixed(2)}</div>
-                    <div>Current Value:</div>
-                    <div className="text-right font-medium">₹{(assetPortfolio.quantity * asset.price).toFixed(2)}</div>
-                    <div>P&L:</div>
-                    <div className={`text-right font-medium ${(assetPortfolio.quantity * asset.price) > assetPortfolio.totalInvestment ? 'text-success' : 'text-destructive'}`}>
-                      ₹{((assetPortfolio.quantity * asset.price) - assetPortfolio.totalInvestment).toFixed(2)} 
-                      ({(((assetPortfolio.quantity * asset.price) / assetPortfolio.totalInvestment - 1) * 100).toFixed(2)}%)
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex items-center justify-between py-2 mb-2">
-                <span>Order Value:</span>
-                <span className="font-semibold">₹{orderTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-              </div>
-              
-              <button
-                className={`w-full py-3 rounded-lg font-medium ${
-                  orderType === 'buy' ? 'bg-success text-white' : 'bg-destructive text-white'
-                }`}
-                onClick={handlePlaceOrder}
-              >
-                {orderType === 'buy' ? 'Buy' : 'Sell'} {asset.symbol}
-              </button>
-            </div>
-          </div>
+          <TradingForm asset={asset} />
           
           <div className="glass-card rounded-lg p-5">
             <h2 className="text-lg font-semibold mb-4 flex items-center">

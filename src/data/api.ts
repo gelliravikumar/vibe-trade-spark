@@ -2,6 +2,7 @@
 import { stockData } from './stocksData';
 import { cryptoData } from './cryptoData';
 import { websocketData } from './websocketData';
+import { getChartData, getSymbolChartData } from './chartData';
 
 // API Endpoints
 const API_ENDPOINTS = {
@@ -33,6 +34,7 @@ const API_ENDPOINTS = {
 export type ApiProvider = 'NSE' | 'BSE' | 'BINANCE' | 'COINGECKO' | 'COINBASE' | 'DUMMY';
 export type DataType = 'STOCK' | 'CRYPTO';
 export type ConnectionMethod = 'REST' | 'WEBSOCKET';
+export type TimeFrame = '1D' | '1W' | '1M' | '3M' | '1Y';
 
 // Websocket connection tracking
 let websocketConnection: WebSocket | null = null;
@@ -212,4 +214,22 @@ export function getConnectionStatus() {
       { status: 'connected', icon: '✅' } : 
       { status: 'connecting', icon: '⏳' } : 
     { status: 'disconnected', icon: '❌' };
+}
+
+// Get chart data for a specific symbol and timeframe
+export function fetchChartData(
+  symbol: string,
+  timeframe: TimeFrame = '1M',
+  provider: ApiProvider = 'DUMMY'
+) {
+  // For dummy data, use our generated chart data
+  if (provider === 'DUMMY') {
+    return Promise.resolve(getSymbolChartData(symbol, timeframe, stockData, cryptoData));
+  }
+  
+  // For real provider implementation (future)
+  // ...
+  
+  // For now, return dummy data for all providers
+  return Promise.resolve(getSymbolChartData(symbol, timeframe, stockData, cryptoData));
 }

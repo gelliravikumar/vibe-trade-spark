@@ -7,6 +7,7 @@ import { useParams } from 'react-router-dom';
 import { useData } from '@/context/DataContext';
 import { toast } from 'sonner';
 import { PageLoader } from '@/components/common/Loader';
+import { PortfolioProvider } from '@/hooks/use-portfolio';
 
 const Trade = () => {
   const { symbol } = useParams<{ symbol: string }>();
@@ -55,7 +56,9 @@ const Trade = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <TradingTerminal symbol={symbol} />
+      <PortfolioProvider>
+        <TradingTerminal symbol={symbol} />
+      </PortfolioProvider>
       <Footer />
     </div>
   );

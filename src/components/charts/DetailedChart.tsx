@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
+  AreaChart,
+  CandlestickChart,
   Area,
   Line,
   Bar,
@@ -13,10 +15,13 @@ import {
   Legend,
   ReferenceArea,
   Brush,
-  Scatter
+  Scatter,
+  Candlestick
 } from 'recharts';
 import { Loader } from '@/components/common/Loader';
 import { Settings2 } from 'lucide-react';
+import { fetchChartData, TimeFrame } from '@/data/api';
+import { useData } from '@/context/DataContext';
 
 interface DetailedChartProps {
   symbol: string;
@@ -31,139 +36,21 @@ interface ChartData {
   low: number;
   close: number;
   volume: number;
-  rsi: number;
-  macd: number;
-  signal: number;
+  rsi?: number;
+  macd?: number;
+  signal?: number;
 }
-
-// Generate dummy chart data
-const generateChartData = (
-  symbol: string, 
-  days = 30, 
-  startPrice = 100, 
-  volatility = 0.02,
-  volume = 1000000
-): ChartData[] => {
-  let price = startPrice;
-  const now = new Date();
-  
-  return Array.from({ length: days }, (_, i) => {
-    const date = new Date(now);
-    date.setDate(now.getDate() - (days - i - 1));
-    
-    // Generate random price change
-    const change = (Math.random() - 0.5) * volatility;
-    price = price * (1 + change);
-    
-    // Calculate other values
-    const open = price * (1 - Math.random() * 0.01);
-    const high = Math.max(price, open) * (1 + Math.random() * 0.01);
-    const low = Math.min(price, open) * (1 - Math.random() * 0.01);
-    const close = price;
-    
-    // Random volume
-    const dailyVolume = volume * (0.5 + Math.random());
-    
-    return {
-      date: date.toISOString().split('T')[0],
-      open,
-      high,
-      low,
-      close,
-      volume: dailyVolume,
-      rsi: 30 + Math.random() * 40, // Random RSI between 30-70
-      macd: (Math.random() - 0.5) * 5, // Random MACD
-      signal: (Math.random() - 0.5) * 3, // Random signal line
-    };
-  });
-};
-
-// Custom candle renderer for candlestick charts using rectangles
-const CustomCandlestick = ({ 
-  x, 
-  y, 
-  width, 
-  height, 
-  low, 
-  high, 
-  open, 
-  close 
-}: { 
-  x: number; 
-  y: number; 
-  width: number; 
-  height: number; 
-  low: number; 
-  high: number; 
-  open: number; 
-  close: number; 
-}) => {
-  const isIncreasing = close > open;
-  const color = isIncreasing ? 'var(--success)' : 'var(--destructive)';
-  const bodyY = isIncreasing ? y + (open - low) / (high - low) * height : y + (close - low) / (high - low) * height;
-  const bodyHeight = isIncreasing 
-    ? (close - open) / (high - low) * height 
-    : (open - close) / (high - low) * height;
-
-  // Calculate wick positions
-  const wickX = x + width / 2;
-  const wickTopY = y;
-  const wickBottomY = y + height;
-  const bodyWidth = Math.max(width, 1);  // Ensure body has at least 1px width
-
-  return (
-    <g>
-      {/* Wick line */}
-      <line
-        x1={wickX}
-        y1={wickTopY}
-        x2={wickX}
-        y2={wickBottomY}
-        stroke="var(--muted-foreground)"
-        strokeWidth={1}
-      />
-      {/* Candle body */}
-      <rect
-        x={x}
-        y={bodyY}
-        width={bodyWidth}
-        height={Math.max(bodyHeight, 1)}  // Ensure body has at least 1px height
-        fill={color}
-        stroke={color}
-      />
-    </g>
-  );
-};
-
-// Render candlesticks using rectangles and lines
-const renderCandlestickItem = (props: any) => {
-  const { x, y, width, height, index, payload } = props;
-  const { low, high, open, close } = payload;
-  
-  return (
-    <CustomCandlestick
-      key={`candle-${index}`}
-      x={x - width / 2}
-      y={y}
-      width={width}
-      height={height}
-      low={low}
-      high={high}
-      open={open}
-      close={close}
-    />
-  );
-};
 
 export const DetailedChart: React.FC<DetailedChartProps> = ({ 
   symbol, 
   type, 
   className = '' 
 }) => {
+  const { apiProvider } = useData();
   const [data, setData] = useState<ChartData[]>([]);
   const [originalData, setOriginalData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState<'1D' | '1W' | '1M' | '3M' | '1Y'>('1M');
+  const [timeframe, setTimeframe] = useState<TimeFrame>('1M');
   const [chartType, setChartType] = useState<'line' | 'candle'>('candle');
   const [indicators, setIndicators] = useState<{
     volume: boolean;
@@ -213,32 +100,50 @@ export const DetailedChart: React.FC<DetailedChartProps> = ({
   useEffect(() => {
     setLoading(true);
     
-    // Simulate API fetch
-    setTimeout(() => {
-      const days = 
-        timeframe === '1D' ? 1 : 
-        timeframe === '1W' ? 7 : 
-        timeframe === '1M' ? 30 : 
-        timeframe === '3M' ? 90 : 
-        365;
-      
-      const startPrice = type === 'CRYPTO' ? 
-        (symbol.includes('BTC') ? 60000 : 3000) : 
-        500;
-      
-      const generatedData = generateChartData(symbol, days, startPrice);
-      setOriginalData(generatedData);
-      setData(generatedData);
-      
-      // Generate level 2 data based on the latest price
-      if (generatedData.length > 0) {
-        const latestPrice = generatedData[generatedData.length - 1].close;
-        setLevel2Data(generateLevel2Data(latestPrice));
-      }
-      
-      setLoading(false);
-    }, 800);
-  }, [symbol, type, timeframe]);
+    // Fetch chart data
+    fetchChartData(symbol, timeframe, apiProvider)
+      .then(chartData => {
+        // Add technical indicators
+        const enrichedData = chartData.map((point: ChartData, index: number, arr: ChartData[]) => {
+          // Calculate basic RSI
+          const rsi = index > 13 ? 
+            30 + Math.random() * 40 : // Simplified random RSI
+            50; // Default
+          
+          // Calculate basic MACD
+          const macd = index > 25 ? 
+            (Math.random() - 0.5) * 5 : // Simplified random MACD
+            0; // Default
+          
+          // Calculate signal line
+          const signal = index > 25 ? 
+            macd + (Math.random() - 0.5) * 2 : // Simplified signal
+            0; // Default
+          
+          return {
+            ...point,
+            rsi,
+            macd,
+            signal
+          };
+        });
+        
+        setOriginalData(enrichedData);
+        setData(enrichedData);
+        
+        // Generate level 2 data based on the latest price
+        if (chartData.length > 0) {
+          const latestPrice = chartData[chartData.length - 1].close;
+          setLevel2Data(generateLevel2Data(latestPrice));
+        }
+        
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error("Error fetching chart data:", error);
+        setLoading(false);
+      });
+  }, [symbol, type, timeframe, apiProvider]);
 
   const toggleIndicator = (indicator: keyof typeof indicators) => {
     setIndicators(prev => ({
@@ -312,9 +217,9 @@ export const DetailedChart: React.FC<DetailedChartProps> = ({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <div className="flex justify-between items-center">
-        <div className="flex space-x-2">
-          {(['1D', '1W', '1M', '3M', '1Y'] as const).map((option) => (
+      <div className="flex flex-wrap justify-between items-center gap-2">
+        <div className="flex flex-wrap gap-2">
+          {(['1D', '1W', '1M', '3M', '1Y'] as TimeFrame[]).map((option) => (
             <button
               key={option}
               className={`px-3 py-1 text-xs rounded-full ${
@@ -329,8 +234,8 @@ export const DetailedChart: React.FC<DetailedChartProps> = ({
           ))}
         </div>
         
-        <div className="flex items-center space-x-2">
-          <div className="flex space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-2">
             <button
               className={`px-3 py-1 text-xs rounded-full ${
                 chartType === 'line'
@@ -353,7 +258,7 @@ export const DetailedChart: React.FC<DetailedChartProps> = ({
             </button>
           </div>
           
-          <div className="flex space-x-2 ml-4">
+          <div className="flex flex-wrap gap-2">
             <button
               className={`px-3 py-1 text-xs rounded-full ${
                 indicators.volume
@@ -444,6 +349,18 @@ export const DetailedChart: React.FC<DetailedChartProps> = ({
                 tickMargin={10}
                 stroke="var(--muted-foreground)"
               />
+              
+              {indicators.volume && (
+                <YAxis 
+                  yAxisId="volume" 
+                  orientation="right" 
+                  domain={['auto', 'auto']}
+                  tick={{ fontSize: 12 }}
+                  tickMargin={10}
+                  stroke="var(--muted-foreground)"
+                />
+              )}
+              
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'var(--card)',
@@ -455,15 +372,32 @@ export const DetailedChart: React.FC<DetailedChartProps> = ({
               />
               <Legend />
               
-              {/* Custom Candlestick Chart using Scatter with CustomShape */}
-              <Scatter
-                name="Price"
-                data={data}
-                shape={renderCandlestickItem}
+              <Candlestick
                 yAxisId="price"
-                fill="var(--success)"
-                stroke="var(--success)"
+                name="Price"
+                dataKey="price"
+                fill="var(--background)"
+                stroke="var(--foreground)"
+                highDataKey="high"
+                lowDataKey="low"
+                openDataKey="open"
+                closeDataKey="close"
+                width={8}
+                upFill="var(--success)"
+                upStroke="var(--success)"
+                downFill="var(--destructive)"
+                downStroke="var(--destructive)"
               />
+              
+              {indicators.volume && (
+                <Bar 
+                  dataKey="volume" 
+                  yAxisId="volume" 
+                  fill="var(--accent)" 
+                  opacity={0.5} 
+                  name="Volume" 
+                />
+              )}
               
               {/* Reference area for zoom */}
               {isZooming && zoomArea.startIndex !== null && zoomArea.endIndex !== null && (
@@ -482,7 +416,7 @@ export const DetailedChart: React.FC<DetailedChartProps> = ({
                 height={30}
                 stroke="var(--primary)"
                 fill="var(--background)"
-                tickFormatter={(value) => ''}
+                tickFormatter={() => ''}
               />
             </ComposedChart>
           </ResponsiveContainer>
@@ -617,7 +551,7 @@ export const DetailedChart: React.FC<DetailedChartProps> = ({
                 height={30}
                 stroke="var(--primary)"
                 fill="var(--background)"
-                tickFormatter={(value) => ''}
+                tickFormatter={() => ''}
               />
             </ComposedChart>
           </ResponsiveContainer>
