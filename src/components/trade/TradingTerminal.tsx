@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DetailedChart } from '@/components/charts/DetailedChart';
 import { DataSourceSelector } from '@/components/ui/DataSourceSelector';
@@ -790,5 +791,109 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
             <DataSourceSelector />
           </div>
           
-          {
-
+          <div className="glass-card rounded-lg p-5">
+            <h2 className="text-lg font-semibold mb-4 flex items-center">
+              <Calculator className="w-5 h-5 mr-2" />
+              Place Order
+            </h2>
+            
+            <div className="flex gap-2 mb-4">
+              <button
+                className={`flex-1 py-2 px-4 rounded-lg font-medium ${
+                  orderType === 'buy' 
+                    ? 'bg-success/10 text-success border border-success' 
+                    : 'bg-muted text-muted-foreground border border-transparent'
+                }`}
+                onClick={() => setOrderType('buy')}
+              >
+                Buy
+              </button>
+              <button
+                className={`flex-1 py-2 px-4 rounded-lg font-medium ${
+                  orderType === 'sell' 
+                    ? 'bg-destructive/10 text-destructive border border-destructive' 
+                    : 'bg-muted text-muted-foreground border border-transparent'
+                }`}
+                onClick={() => setOrderType('sell')}
+              >
+                Sell
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Price (₹)
+                </label>
+                <input
+                  type="text"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  className="w-full p-2 border rounded-lg bg-muted"
+                  readOnly
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Quantity
+                </label>
+                <input
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  className="w-full p-2 border rounded-lg bg-muted"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              
+              {assetPortfolio && (
+                <div className="p-3 rounded-lg bg-secondary/20 mt-4">
+                  <h3 className="font-medium mb-2">Your Position</h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>Holding:</div>
+                    <div className="text-right font-medium">{assetPortfolio.quantity} {asset.symbol}</div>
+                    <div>Avg. Cost:</div>
+                    <div className="text-right font-medium">₹{assetPortfolio.avgPrice.toFixed(2)}</div>
+                    <div>Investment:</div>
+                    <div className="text-right font-medium">₹{assetPortfolio.totalInvestment.toFixed(2)}</div>
+                    <div>Current Value:</div>
+                    <div className="text-right font-medium">₹{(assetPortfolio.quantity * asset.price).toFixed(2)}</div>
+                    <div>P&L:</div>
+                    <div className={`text-right font-medium ${(assetPortfolio.quantity * asset.price) > assetPortfolio.totalInvestment ? 'text-success' : 'text-destructive'}`}>
+                      ₹{((assetPortfolio.quantity * asset.price) - assetPortfolio.totalInvestment).toFixed(2)} 
+                      ({(((assetPortfolio.quantity * asset.price) / assetPortfolio.totalInvestment - 1) * 100).toFixed(2)}%)
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-center justify-between py-2 mb-2">
+                <span>Order Value:</span>
+                <span className="font-semibold">₹{orderTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+              </div>
+              
+              <button
+                className={`w-full py-3 rounded-lg font-medium ${
+                  orderType === 'buy' ? 'bg-success text-white' : 'bg-destructive text-white'
+                }`}
+                onClick={handlePlaceOrder}
+              >
+                {orderType === 'buy' ? 'Buy' : 'Sell'} {asset.symbol}
+              </button>
+            </div>
+          </div>
+          
+          <div className="glass-card rounded-lg p-5">
+            <h2 className="text-lg font-semibold mb-4 flex items-center">
+              <Star className="w-5 h-5 mr-2" />
+              Watchlist
+            </h2>
+            <WatchlistManager selectedAsset={asset.symbol} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
