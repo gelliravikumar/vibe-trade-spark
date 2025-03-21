@@ -8,7 +8,7 @@ interface MiniChartProps {
   height?: number;
   isPositive?: boolean;
   symbol?: string;
-  type?: string;
+  type?: 'STOCK' | 'CRYPTO';
   width?: number;
   showChart?: boolean;
   showTooltip?: boolean;

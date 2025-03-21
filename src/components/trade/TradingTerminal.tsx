@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { DetailedChart } from '@/components/charts/DetailedChart';
+import { TradingViewChart } from '@/components/charts/TradingViewChart';
 import { DataSourceSelector } from '@/components/ui/DataSourceSelector';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '@/context/DataContext';
@@ -41,6 +42,9 @@ import {
 } from "@/components/ui/table";
 import { MiniChart } from '@/components/charts/MiniChart';
 import { TradingForm } from '@/components/trade/TradingForm';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface TradingTerminalProps {
   symbol?: string;
@@ -50,6 +54,7 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
   const navigate = useNavigate();
   const { stocksData, cryptoData } = useData();
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [useAdvancedChart, setUseAdvancedChart] = useState(true);
   
   const asset = symbol ? [...stocksData, ...cryptoData].find(asset => asset.symbol === symbol) : null;
   
@@ -164,7 +169,29 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
           </div>
           
           <div className="glass-card rounded-lg p-5">
-            <DetailedChart symbol={asset.symbol} type={asset.type} />
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Price Chart</h2>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="advanced-chart"
+                    checked={useAdvancedChart}
+                    onCheckedChange={setUseAdvancedChart}
+                  />
+                  <Label htmlFor="advanced-chart">TradingView Chart</Label>
+                </div>
+              </div>
+            </div>
+            
+            {useAdvancedChart ? (
+              <TradingViewChart 
+                symbol={asset.symbol} 
+                type={asset.type} 
+                height={400}
+              />
+            ) : (
+              <DetailedChart symbol={asset.symbol} type={asset.type} />
+            )}
           </div>
           
           <Tabs defaultValue="info" className="w-full">

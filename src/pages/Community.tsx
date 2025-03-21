@@ -1,1015 +1,710 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Card, 
   CardContent, 
+  CardDescription, 
   CardFooter, 
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+import { 
+  MessageCircle, 
+  ThumbsUp, 
+  MessageSquare, 
+  Share2, 
+  BarChart2, 
+  Bookmark,
+  Users,
+  Trending,
+  Clock,
+  Filter,
+  PlusCircle,
+  Search
+} from 'lucide-react';
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { 
-  MessageSquare, 
-  ThumbsUp, 
-  ThumbsDown, 
-  Share2, 
-  MoreHorizontal,
-  Edit,
-  Trash,
-  Send,
-  Filter,
-  UserCircle
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface Post {
   id: string;
-  author: {
-    id: string;
+  user: {
     name: string;
-    avatar?: string;
-  };
-  title: string;
-  content: string;
-  timestamp: Date;
-  likes: number;
-  dislikes: number;
-  comments: Comment[];
-  category: 'general' | 'stocks' | 'crypto' | 'analysis';
-}
-
-interface Comment {
-  id: string;
-  author: {
-    id: string;
-    name: string;
-    avatar?: string;
+    avatar: string;
+    handle: string;
   };
   content: string;
-  timestamp: Date;
+  timestamp: string;
   likes: number;
-  dislikes: number;
+  comments: number;
+  shares: number;
+  isLiked: boolean;
+  isBookmarked: boolean;
+  tags: string[];
 }
-
-const currentUser = {
-  id: 'user1',
-  name: 'John Doe',
-  avatar: ''
-};
 
 const initialPosts: Post[] = [
   {
     id: '1',
-    author: {
-      id: 'user2',
-      name: 'Jane Smith',
-      avatar: ''
+    user: {
+      name: 'Rahul Sharma',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul',
+      handle: '@rahulsharma'
     },
-    title: 'Market Outlook for 2023',
-    content: 'What are your thoughts on the market for the rest of 2023? I\'m seeing some bearish signals in tech stocks, but financials seem to be holding steady. Any insights?',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3),
+    content: "Just bought some $BTC at the dip! Looking forward to the halving event next month. What are your price predictions? #Bitcoin #Crypto #Trading",
+    timestamp: '2 hours ago',
     likes: 24,
-    dislikes: 3,
-    comments: [
-      {
-        id: 'c1',
-        author: {
-          id: 'user3',
-          name: 'Michael Johnson',
-          avatar: ''
-        },
-        content: 'I agree with your assessment on tech. I\'m reducing my exposure to high-growth tech stocks and focusing more on value plays for now.',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-        likes: 8,
-        dislikes: 1
-      }
-    ],
-    category: 'general'
+    comments: 8,
+    shares: 3,
+    isLiked: false,
+    isBookmarked: false,
+    tags: ['Bitcoin', 'Crypto', 'Trading']
   },
   {
     id: '2',
-    author: {
-      id: 'user4',
-      name: 'Robert Chen',
-      avatar: ''
+    user: {
+      name: 'Priya Patel',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya',
+      handle: '@priyapatel'
     },
-    title: 'Bitcoin Analysis - Support Levels',
-    content: 'After the recent correction, BTC seems to have found support around $60K. The RSI is showing oversold conditions on the 4H chart, and we might see a bounce back to $65K soon. Thoughts?',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5),
-    likes: 42,
-    dislikes: 7,
-    comments: [],
-    category: 'crypto'
+    content: "I've been researching $ETH for my portfolio. The upcoming ETH 2.0 upgrade seems promising for scalability. Any thoughts from the community? #Ethereum #DeFi",
+    timestamp: '5 hours ago',
+    likes: 32,
+    comments: 12,
+    shares: 7,
+    isLiked: true,
+    isBookmarked: true,
+    tags: ['Ethereum', 'DeFi']
   },
   {
     id: '3',
-    author: {
-      id: 'user1',
-      name: 'John Doe',
-      avatar: ''
+    user: {
+      name: 'Amit Verma',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Amit',
+      handle: '@amitverma'
     },
-    title: 'HDFC Bank Technical Analysis',
-    content: 'HDFC Bank is approaching a key resistance level at ₹1,650. Volume has been increasing on up days, suggesting strong buying interest. If it breaks above this level, we could see a move to ₹1,750 in the short term.',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12),
-    likes: 16,
-    dislikes: 2,
-    comments: [
-      {
-        id: 'c2',
-        author: {
-          id: 'user5',
-          name: 'Priya Sharma',
-          avatar: ''
-        },
-        content: 'Great analysis! I\'m also watching this stock closely. The banking sector looks strong overall.',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 10),
-        likes: 5,
-        dislikes: 0
-      },
-      {
-        id: 'c3',
-        author: {
-          id: 'user2',
-          name: 'Jane Smith',
-          avatar: ''
-        },
-        content: 'Do you think the recent RBI policy changes will impact banking stocks in the short term?',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8),
-        likes: 3,
-        dislikes: 0
-      }
-    ],
-    category: 'stocks'
+    content: "Just set up my first hardware wallet! Feels great to truly own my crypto. Any security tips I should be aware of? #Security #Crypto #HardwareWallet",
+    timestamp: '1 day ago',
+    likes: 45,
+    comments: 23,
+    shares: 5,
+    isLiked: false,
+    isBookmarked: true,
+    tags: ['Security', 'Crypto', 'HardwareWallet']
+  },
+  {
+    id: '4',
+    user: {
+      name: 'Sneha Gupta',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sneha',
+      handle: '@snehagupta'
+    },
+    content: "Analysis: The INR to crypto volumes have increased by 45% in the last quarter. Indian traders are becoming more active! What do you think about the Indian crypto market? #India #CryptoTrading",
+    timestamp: '2 days ago',
+    likes: 62,
+    comments: 18,
+    shares: 14,
+    isLiked: true,
+    isBookmarked: false,
+    tags: ['India', 'CryptoTrading']
   }
 ];
 
 const Community = () => {
-  const [posts, setPosts] = useState<Post[]>(() => {
-    const savedPosts = localStorage.getItem('community_posts');
-    return savedPosts ? JSON.parse(savedPosts) : initialPosts;
-  });
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [newPostTitle, setNewPostTitle] = useState('');
+  const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [newPostContent, setNewPostContent] = useState('');
-  const [newPostCategory, setNewPostCategory] = useState<Post['category']>('general');
-  const [newComment, setNewComment] = useState<Record<string, string>>({});
-  const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [isNewPostDialogOpen, setIsNewPostDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const handleLike = (postId: string) => {
+    setPosts(posts.map(post => {
+      if (post.id === postId) {
+        const isLiked = !post.isLiked;
+        return {
+          ...post,
+          isLiked,
+          likes: isLiked ? post.likes + 1 : post.likes - 1
+        };
+      }
+      return post;
+    }));
+  };
   
-  useEffect(() => {
-    localStorage.setItem('community_posts', JSON.stringify(posts));
-  }, [posts]);
-  
-  const filteredPosts = selectedCategory === 'all' 
-    ? posts 
-    : posts.filter(post => post.category === selectedCategory);
-  
-  const handleCreatePost = () => {
-    if (!newPostTitle.trim() || !newPostContent.trim()) {
-      toast.error('Please enter both a title and content for your post');
+  const handleBookmark = (postId: string) => {
+    setPosts(posts.map(post => {
+      if (post.id === postId) {
+        return {
+          ...post,
+          isBookmarked: !post.isBookmarked
+        };
+      }
+      return post;
+    }));
+    
+    toast.success("Post saved to your bookmarks!");
+  };
+
+  const handleComment = (postId: string) => {
+    toast.info("Comments feature coming soon!");
+  };
+
+  const handleShare = (postId: string) => {
+    toast.info("Share feature coming soon!");
+  };
+
+  const handleNewPost = () => {
+    if (!newPostContent.trim()) {
+      toast.error("Please enter some content for your post.");
       return;
     }
+    
+    // Extract hashtags
+    const tags = newPostContent.match(/#(\w+)/g)?.map(tag => tag.slice(1)) || [];
     
     const newPost: Post = {
       id: Date.now().toString(),
-      author: currentUser,
-      title: newPostTitle,
+      user: {
+        name: 'You',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=You',
+        handle: '@you'
+      },
       content: newPostContent,
-      timestamp: new Date(),
+      timestamp: 'Just now',
       likes: 0,
-      dislikes: 0,
-      comments: [],
-      category: newPostCategory
+      comments: 0,
+      shares: 0,
+      isLiked: false,
+      isBookmarked: false,
+      tags
     };
     
-    setPosts(prev => [newPost, ...prev]);
-    setNewPostTitle('');
+    setPosts([newPost, ...posts]);
     setNewPostContent('');
-    setNewPostCategory('general');
-    setIsNewPostDialogOpen(false);
-    toast.success('Post created successfully');
+    toast.success("Post published successfully!");
   };
-  
-  const handleUpdatePost = () => {
-    if (!editingPost) return;
-    
-    if (!editingPost.title.trim() || !editingPost.content.trim()) {
-      toast.error('Please enter both a title and content for your post');
-      return;
-    }
-    
-    setPosts(prev => prev.map(post => 
-      post.id === editingPost.id ? { ...editingPost, timestamp: new Date() } : post
-    ));
-    
-    setEditingPost(null);
-    toast.success('Post updated successfully');
+
+  const handleDelete = (postId: string) => {
+    setPosts(posts.filter(post => post.id !== postId));
+    toast.success("Post deleted successfully!");
   };
-  
-  const handleDeletePost = (postId: string) => {
-    if (window.confirm('Are you sure you want to delete this post?')) {
-      setPosts(prev => prev.filter(post => post.id !== postId));
-      toast.success('Post deleted successfully');
-    }
-  };
-  
-  const handleAddComment = (postId: string) => {
-    const commentContent = newComment[postId];
-    
-    if (!commentContent?.trim()) {
-      toast.error('Please enter a comment');
-      return;
-    }
-    
-    const newCommentObj: Comment = {
-      id: Date.now().toString(),
-      author: currentUser,
-      content: commentContent,
-      timestamp: new Date(),
-      likes: 0,
-      dislikes: 0
-    };
-    
-    setPosts(prev => prev.map(post => 
-      post.id === postId 
-        ? { ...post, comments: [...post.comments, newCommentObj] } 
-        : post
-    ));
-    
-    setNewComment(prev => ({ ...prev, [postId]: '' }));
-    toast.success('Comment added successfully');
-  };
-  
-  const formatDate = (date: Date) => {
-    const now = new Date();
-    const diffMs = now.getTime() - new Date(date).getTime();
-    const diffSecs = Math.floor(diffMs / 1000);
-    const diffMins = Math.floor(diffSecs / 60);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-    
-    if (diffSecs < 60) return `${diffSecs} sec ago`;
-    if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24) return `${diffHours} hr ago`;
-    if (diffDays < 7) return `${diffDays} day ago`;
-    
-    return new Date(date).toLocaleDateString();
-  };
-  
-  const handleLike = (postId: string, commentId?: string) => {
-    if (commentId) {
-      setPosts(prev => prev.map(post => 
-        post.id === postId 
-          ? {
-              ...post,
-              comments: post.comments.map(comment => 
-                comment.id === commentId 
-                  ? { ...comment, likes: comment.likes + 1 } 
-                  : comment
-              )
-            } 
-          : post
-      ));
-    } else {
-      setPosts(prev => prev.map(post => 
-        post.id === postId 
-          ? { ...post, likes: post.likes + 1 } 
-          : post
-      ));
-    }
-  };
-  
-  const handleDislike = (postId: string, commentId?: string) => {
-    if (commentId) {
-      setPosts(prev => prev.map(post => 
-        post.id === postId 
-          ? {
-              ...post,
-              comments: post.comments.map(comment => 
-                comment.id === commentId 
-                  ? { ...comment, dislikes: comment.dislikes + 1 } 
-                  : comment
-              )
-            } 
-          : post
-      ));
-    } else {
-      setPosts(prev => prev.map(post => 
-        post.id === postId 
-          ? { ...post, dislikes: post.dislikes + 1 } 
-          : post
-      ));
-    }
-  };
-  
+
+  // Filter posts based on search term
+  const filteredPosts = posts.filter(post => 
+    post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    post.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    post.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
       <main className="flex-grow pt-24 pb-16 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <h1 className="text-3xl font-bold">Community</h1>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Community</h1>
+              <p className="text-muted-foreground">
+                Connect with traders, share insights, and learn from the community
+              </p>
+            </div>
             
-            <div className="flex items-center gap-4">
-              <Dialog open={isNewPostDialogOpen} onOpenChange={setIsNewPostDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>Create Post</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px]">
-                  <DialogHeader>
-                    <DialogTitle>Create New Post</DialogTitle>
-                    <DialogDescription>
-                      Share your thoughts, analysis, or questions with the community.
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <label htmlFor="post-title" className="text-sm font-medium">Title</label>
-                      <Input
-                        id="post-title"
-                        placeholder="Enter a title for your post"
-                        value={newPostTitle}
-                        onChange={(e) => setNewPostTitle(e.target.value)}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label htmlFor="post-category" className="text-sm font-medium">Category</label>
-                      <select
-                        id="post-category"
-                        className="w-full p-2 rounded-md border border-input bg-background"
-                        value={newPostCategory}
-                        onChange={(e) => setNewPostCategory(e.target.value as Post['category'])}
-                      >
-                        <option value="general">General Discussion</option>
-                        <option value="stocks">Stocks</option>
-                        <option value="crypto">Cryptocurrency</option>
-                        <option value="analysis">Technical Analysis</option>
-                      </select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label htmlFor="post-content" className="text-sm font-medium">Content</label>
-                      <Textarea
-                        id="post-content"
-                        placeholder="Share your thoughts..."
-                        className="min-h-[200px]"
-                        value={newPostContent}
-                        onChange={(e) => setNewPostContent(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsNewPostDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleCreatePost}>
-                      Post
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              
-              <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
-                <DialogContent className="sm:max-w-[600px]">
-                  <DialogHeader>
-                    <DialogTitle>Edit Post</DialogTitle>
-                    <DialogDescription>
-                      Make changes to your post.
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  {editingPost && (
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <label htmlFor="edit-post-title" className="text-sm font-medium">Title</label>
-                        <Input
-                          id="edit-post-title"
-                          placeholder="Enter a title for your post"
-                          value={editingPost.title}
-                          onChange={(e) => setEditingPost({ ...editingPost, title: e.target.value })}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label htmlFor="edit-post-category" className="text-sm font-medium">Category</label>
-                        <select
-                          id="edit-post-category"
-                          className="w-full p-2 rounded-md border border-input bg-background"
-                          value={editingPost.category}
-                          onChange={(e) => setEditingPost({ ...editingPost, category: e.target.value as Post['category'] })}
-                        >
-                          <option value="general">General Discussion</option>
-                          <option value="stocks">Stocks</option>
-                          <option value="crypto">Cryptocurrency</option>
-                          <option value="analysis">Technical Analysis</option>
-                        </select>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label htmlFor="edit-post-content" className="text-sm font-medium">Content</label>
-                        <Textarea
-                          id="edit-post-content"
-                          placeholder="Share your thoughts..."
-                          className="min-h-[200px]"
-                          value={editingPost.content}
-                          onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setEditingPost(null)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleUpdatePost}>
-                      Update
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+            <div className="relative w-full md:w-72">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search posts..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
           </div>
           
-          <Tabs defaultValue="all" onValueChange={setSelectedCategory}>
-            <div className="flex justify-between items-center mb-6">
-              <TabsList>
-                <TabsTrigger value="all">All Posts</TabsTrigger>
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="stocks">Stocks</TabsTrigger>
-                <TabsTrigger value="crypto">Crypto</TabsTrigger>
-                <TabsTrigger value="analysis">Analysis</TabsTrigger>
-              </TabsList>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-8">
+              <Card className="mb-6">
+                <CardContent className="pt-6">
+                  <Textarea
+                    placeholder="Share your thoughts, ideas, or market insights..."
+                    className="resize-none mb-4"
+                    rows={3}
+                    value={newPostContent}
+                    onChange={(e) => setNewPostContent(e.target.value)}
+                  />
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-muted-foreground">
+                      Use #hashtags to categorize your post
+                    </div>
+                    <Button onClick={handleNewPost}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Post
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
               
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Latest</span>
-              </div>
+              <Tabs defaultValue="all">
+                <TabsList className="w-full mb-6">
+                  <TabsTrigger value="all" className="flex-grow">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    All Posts
+                  </TabsTrigger>
+                  <TabsTrigger value="trending" className="flex-grow">
+                    <Trending className="w-4 h-4 mr-2" />
+                    Trending
+                  </TabsTrigger>
+                  <TabsTrigger value="analysis" className="flex-grow">
+                    <BarChart2 className="w-4 h-4 mr-2" />
+                    Analysis
+                  </TabsTrigger>
+                  <TabsTrigger value="bookmarks" className="flex-grow">
+                    <Bookmark className="w-4 h-4 mr-2" />
+                    Bookmarked
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="all" className="space-y-4">
+                  {filteredPosts.length > 0 ? (
+                    filteredPosts.map(post => (
+                      <Card key={post.id} className="overflow-hidden">
+                        <CardHeader className="pb-3">
+                          <div className="flex justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <img src={post.user.avatar} alt={post.user.name} />
+                              </Avatar>
+                              <div>
+                                <div className="font-semibold">{post.user.name}</div>
+                                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                  <span>{post.user.handle}</span>
+                                  <span>•</span>
+                                  <span>{post.timestamp}</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {post.user.handle === '@you' && (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    •••
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Delete Post?</DialogTitle>
+                                    <DialogDescription>
+                                      This action cannot be undone. The post will be permanently deleted.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <DialogFooter>
+                                    <Button
+                                      variant="destructive"
+                                      onClick={() => handleDelete(post.id)}
+                                    >
+                                      Delete
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                            )}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pb-3">
+                          <p className="whitespace-pre-wrap">{post.content}</p>
+                          
+                          {post.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {post.tags.map(tag => (
+                                <span 
+                                  key={tag} 
+                                  className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                        <CardFooter className="border-t pt-3 flex justify-between">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleLike(post.id)}
+                            className={post.isLiked ? "text-primary" : ""}
+                          >
+                            <ThumbsUp className="w-4 h-4 mr-2" />
+                            {post.likes}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleComment(post.id)}
+                          >
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            {post.comments}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleShare(post.id)}
+                          >
+                            <Share2 className="w-4 h-4 mr-2" />
+                            {post.shares}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleBookmark(post.id)}
+                            className={post.isBookmarked ? "text-primary" : ""}
+                          >
+                            <Bookmark className="w-4 h-4" />
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))
+                  ) : (
+                    <Card>
+                      <CardContent className="pt-6 pb-6 text-center">
+                        <p className="text-muted-foreground">No posts found matching your search.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="trending" className="space-y-4">
+                  {filteredPosts
+                    .sort((a, b) => b.likes - a.likes)
+                    .slice(0, 3)
+                    .map(post => (
+                      <Card key={post.id}>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <img src={post.user.avatar} alt={post.user.name} />
+                            </Avatar>
+                            <div>
+                              <div className="font-semibold">{post.user.name}</div>
+                              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                <span>{post.user.handle}</span>
+                                <span>•</span>
+                                <span>{post.timestamp}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pb-3">
+                          <p>{post.content}</p>
+                          
+                          {post.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {post.tags.map(tag => (
+                                <span 
+                                  key={tag} 
+                                  className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                        <CardFooter className="border-t pt-3 flex justify-between">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleLike(post.id)}
+                            className={post.isLiked ? "text-primary" : ""}
+                          >
+                            <ThumbsUp className="w-4 h-4 mr-2" />
+                            {post.likes}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleComment(post.id)}
+                          >
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            {post.comments}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleShare(post.id)}
+                          >
+                            <Share2 className="w-4 h-4 mr-2" />
+                            {post.shares}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleBookmark(post.id)}
+                            className={post.isBookmarked ? "text-primary" : ""}
+                          >
+                            <Bookmark className="w-4 h-4" />
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                </TabsContent>
+                
+                <TabsContent value="analysis" className="space-y-4">
+                  {filteredPosts
+                    .filter(post => post.content.toLowerCase().includes('analysis') || 
+                                    post.tags.some(tag => tag.includes('Analysis')))
+                    .map(post => (
+                      <Card key={post.id}>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <img src={post.user.avatar} alt={post.user.name} />
+                            </Avatar>
+                            <div>
+                              <div className="font-semibold">{post.user.name}</div>
+                              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                <span>{post.user.handle}</span>
+                                <span>•</span>
+                                <span>{post.timestamp}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pb-3">
+                          <p>{post.content}</p>
+                          
+                          {post.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {post.tags.map(tag => (
+                                <span 
+                                  key={tag} 
+                                  className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                        <CardFooter className="border-t pt-3 flex justify-between">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleLike(post.id)}
+                            className={post.isLiked ? "text-primary" : ""}
+                          >
+                            <ThumbsUp className="w-4 h-4 mr-2" />
+                            {post.likes}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleComment(post.id)}
+                          >
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            {post.comments}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleShare(post.id)}
+                          >
+                            <Share2 className="w-4 h-4 mr-2" />
+                            {post.shares}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleBookmark(post.id)}
+                            className={post.isBookmarked ? "text-primary" : ""}
+                          >
+                            <Bookmark className="w-4 h-4" />
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                </TabsContent>
+                
+                <TabsContent value="bookmarks" className="space-y-4">
+                  {filteredPosts
+                    .filter(post => post.isBookmarked)
+                    .map(post => (
+                      <Card key={post.id}>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <img src={post.user.avatar} alt={post.user.name} />
+                            </Avatar>
+                            <div>
+                              <div className="font-semibold">{post.user.name}</div>
+                              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                <span>{post.user.handle}</span>
+                                <span>•</span>
+                                <span>{post.timestamp}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pb-3">
+                          <p>{post.content}</p>
+                          
+                          {post.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {post.tags.map(tag => (
+                                <span 
+                                  key={tag} 
+                                  className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                        <CardFooter className="border-t pt-3 flex justify-between">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleLike(post.id)}
+                            className={post.isLiked ? "text-primary" : ""}
+                          >
+                            <ThumbsUp className="w-4 h-4 mr-2" />
+                            {post.likes}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleComment(post.id)}
+                          >
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            {post.comments}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleShare(post.id)}
+                          >
+                            <Share2 className="w-4 h-4 mr-2" />
+                            {post.shares}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleBookmark(post.id)}
+                            className={post.isBookmarked ? "text-primary" : ""}
+                          >
+                            <Bookmark className="w-4 h-4" />
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                </TabsContent>
+              </Tabs>
             </div>
             
-            <TabsContent value="all" className="mt-0">
-              <div className="space-y-6">
-                {filteredPosts.map((post) => (
-                  <Card key={post.id} className="overflow-hidden">
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
+            <div className="lg:col-span-4 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Trending className="w-5 h-5 mr-2" />
+                    Trending Topics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div className="font-medium">#Bitcoin</div>
+                      <div className="text-sm text-muted-foreground">2.5K posts</div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="font-medium">#DeFi</div>
+                      <div className="text-sm text-muted-foreground">1.8K posts</div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="font-medium">#Altcoins</div>
+                      <div className="text-sm text-muted-foreground">1.2K posts</div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="font-medium">#NFT</div>
+                      <div className="text-sm text-muted-foreground">950 posts</div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="font-medium">#TradingTips</div>
+                      <div className="text-sm text-muted-foreground">780 posts</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Users className="w-5 h-5 mr-2" />
+                    Who to Follow
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[
+                      { name: 'Crypto Expert', handle: '@cryptoexpert', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Expert' },
+                      { name: 'Trader Pro', handle: '@traderpro', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Trader' },
+                      { name: 'Market Analyst', handle: '@marketanalyst', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Analyst' }
+                    ].map((profile, index) => (
+                      <div key={index} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarImage src={post.author.avatar} />
-                            <AvatarFallback>
-                              {post.author.name.charAt(0)}
-                            </AvatarFallback>
+                          <Avatar className="h-10 w-10">
+                            <img src={profile.avatar} alt={profile.name} />
                           </Avatar>
                           <div>
-                            <CardTitle className="text-lg">{post.title}</CardTitle>
-                            <p className="text-sm text-muted-foreground">
-                              Posted by {post.author.name} • {formatDate(new Date(post.timestamp))}
-                            </p>
+                            <div className="font-semibold">{profile.name}</div>
+                            <div className="text-sm text-muted-foreground">{profile.handle}</div>
                           </div>
                         </div>
-                        
-                        {post.author.id === currentUser.id && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="w-5 h-5" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => setEditingPost(post)}>
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => handleDeletePost(post.id)}
-                              >
-                                <Trash className="w-4 h-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pb-3">
-                      <p className="whitespace-pre-line">{post.content}</p>
-                    </CardContent>
-                    <CardFooter className="flex justify-between items-center pt-0 pb-3">
-                      <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => handleLike(post.id)}>
-                          <ThumbsUp className="w-4 h-4" />
-                          <span>{post.likes}</span>
-                        </Button>
-                        <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => handleDislike(post.id)}>
-                          <ThumbsDown className="w-4 h-4" />
-                          <span>{post.dislikes}</span>
-                        </Button>
-                        <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                          <MessageSquare className="w-4 h-4" />
-                          <span>{post.comments.length}</span>
+                        <Button variant="outline" size="sm">
+                          Follow
                         </Button>
                       </div>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                        <Share2 className="w-4 h-4" />
-                        <span>Share</span>
-                      </Button>
-                    </CardFooter>
-                    
-                    {post.comments.length > 0 && (
-                      <div className="px-6 pb-4 border-t pt-3">
-                        <h3 className="text-sm font-medium mb-3">Comments</h3>
-                        <ScrollArea className="max-h-[300px]">
-                          <div className="space-y-4">
-                            {post.comments.map((comment) => (
-                              <div key={comment.id} className="border-b pb-3 last:border-0">
-                                <div className="flex items-start gap-3">
-                                  <Avatar className="w-8 h-8">
-                                    <AvatarImage src={comment.author.avatar} />
-                                    <AvatarFallback>
-                                      {comment.author.name.charAt(0)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex-1">
-                                    <div className="flex justify-between">
-                                      <p className="text-sm font-medium">{comment.author.name}</p>
-                                      <p className="text-xs text-muted-foreground">{formatDate(new Date(comment.timestamp))}</p>
-                                    </div>
-                                    <p className="text-sm mt-1">{comment.content}</p>
-                                    <div className="flex items-center gap-3 mt-2">
-                                      <Button variant="ghost" size="sm" className="h-6 px-2 text-xs flex items-center gap-1" onClick={() => handleLike(post.id, comment.id)}>
-                                        <ThumbsUp className="w-3 h-3" />
-                                        <span>{comment.likes}</span>
-                                      </Button>
-                                      <Button variant="ghost" size="sm" className="h-6 px-2 text-xs flex items-center gap-1" onClick={() => handleDislike(post.id, comment.id)}>
-                                        <ThumbsDown className="w-3 h-3" />
-                                        <span>{comment.dislikes}</span>
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </div>
-                    )}
-                    
-                    <div className="px-6 pb-4 pt-2 border-t flex items-center gap-3">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={currentUser.avatar} />
-                        <AvatarFallback>
-                          {currentUser.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 flex items-center gap-2">
-                        <Input
-                          placeholder="Add a comment..."
-                          value={newComment[post.id] || ''}
-                          onChange={(e) => setNewComment({ ...newComment, [post.id]: e.target.value })}
-                          onKeyDown={(e) => e.key === 'Enter' && handleAddComment(post.id)}
-                        />
-                        <Button size="icon" variant="ghost" onClick={() => handleAddComment(post.id)}>
-                          <Send className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-                
-                {filteredPosts.length === 0 && (
-                  <div className="text-center py-12">
-                    <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground opacity-20 mb-3" />
-                    <h3 className="text-lg font-medium">No posts yet</h3>
-                    <p className="text-muted-foreground">Be the first to start a discussion!</p>
-                    <Button className="mt-4" onClick={() => setIsNewPostDialogOpen(true)}>
-                      Create Post
-                    </Button>
+                    ))}
                   </div>
-                )}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="general" className="mt-0">
-              {filteredPosts.filter(post => post.category === 'general').map((post) => (
-                <Card key={post.id} className="overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={post.author.avatar} />
-                          <AvatarFallback>
-                            {post.author.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <CardTitle className="text-lg">{post.title}</CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            Posted by {post.author.name} • {formatDate(new Date(post.timestamp))}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {post.author.id === currentUser.id && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="w-5 h-5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setEditingPost(post)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => handleDeletePost(post.id)}
-                            >
-                              <Trash className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Clock className="w-5 h-5 mr-2" />
+                    Latest Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm">
+                  <div className="space-y-4">
+                    <div className="border-l-2 border-primary pl-4 pb-4">
+                      <p className="font-medium">Rahul Sharma posted about Bitcoin</p>
+                      <p className="text-muted-foreground">2 hours ago</p>
                     </div>
-                  </CardHeader>
-                  <CardContent className="pb-3">
-                    <p className="whitespace-pre-line">{post.content}</p>
-                  </CardContent>
-                  <CardFooter className="flex justify-between items-center pt-0 pb-3">
-                    <div className="flex items-center gap-4">
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => handleLike(post.id)}>
-                        <ThumbsUp className="w-4 h-4" />
-                        <span>{post.likes}</span>
-                      </Button>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => handleDislike(post.id)}>
-                        <ThumbsDown className="w-4 h-4" />
-                        <span>{post.dislikes}</span>
-                      </Button>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                        <MessageSquare className="w-4 h-4" />
-                        <span>{post.comments.length}</span>
-                      </Button>
+                    <div className="border-l-2 border-primary pl-4 pb-4">
+                      <p className="font-medium">Priya Patel commented on Ethereum analysis</p>
+                      <p className="text-muted-foreground">5 hours ago</p>
                     </div>
-                    <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                      <Share2 className="w-4 h-4" />
-                      <span>Share</span>
-                    </Button>
-                  </CardFooter>
-                  
-                  {post.comments.length > 0 && (
-                    <div className="px-6 pb-4 border-t pt-3">
-                      <h3 className="text-sm font-medium mb-3">Comments</h3>
-                      <ScrollArea className="max-h-[300px]">
-                        <div className="space-y-4">
-                          {post.comments.map((comment) => (
-                            <div key={comment.id} className="border-b pb-3 last:border-0">
-                              <div className="flex items-start gap-3">
-                                <Avatar className="w-8 h-8">
-                                  <AvatarImage src={comment.author.avatar} />
-                                  <AvatarFallback>
-                                    {comment.author.name.charAt(0)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                  <div className="flex justify-between">
-                                    <p className="text-sm font-medium">{comment.author.name}</p>
-                                    <p className="text-xs text-muted-foreground">{formatDate(new Date(comment.timestamp))}</p>
-                                  </div>
-                                  <p className="text-sm mt-1">{comment.content}</p>
-                                  <div className="flex items-center gap-3 mt-2">
-                                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs flex items-center gap-1" onClick={() => handleLike(post.id, comment.id)}>
-                                      <ThumbsUp className="w-3 h-3" />
-                                      <span>{comment.likes}</span>
-                                    </Button>
-                                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs flex items-center gap-1" onClick={() => handleDislike(post.id, comment.id)}>
-                                      <ThumbsDown className="w-3 h-3" />
-                                      <span>{comment.dislikes}</span>
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </div>
-                  )}
-                  
-                  <div className="px-6 pb-4 pt-2 border-t flex items-center gap-3">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={currentUser.avatar} />
-                      <AvatarFallback>
-                        {currentUser.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 flex items-center gap-2">
-                      <Input
-                        placeholder="Add a comment..."
-                        value={newComment[post.id] || ''}
-                        onChange={(e) => setNewComment({ ...newComment, [post.id]: e.target.value })}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddComment(post.id)}
-                      />
-                      <Button size="icon" variant="ghost" onClick={() => handleAddComment(post.id)}>
-                        <Send className="w-4 h-4" />
-                      </Button>
+                    <div className="border-l-2 border-primary pl-4">
+                      <p className="font-medium">New market report published</p>
+                      <p className="text-muted-foreground">yesterday</p>
                     </div>
                   </div>
-                </Card>
-              ))}
-            </TabsContent>
-            
-            <TabsContent value="stocks" className="mt-0">
-              {filteredPosts.filter(post => post.category === 'stocks').map((post) => (
-                <Card key={post.id} className="overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={post.author.avatar} />
-                          <AvatarFallback>
-                            {post.author.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <CardTitle className="text-lg">{post.title}</CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            Posted by {post.author.name} • {formatDate(new Date(post.timestamp))}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {post.author.id === currentUser.id && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="w-5 h-5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setEditingPost(post)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => handleDeletePost(post.id)}
-                            >
-                              <Trash className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-3">
-                    <p className="whitespace-pre-line">{post.content}</p>
-                  </CardContent>
-                  <CardFooter className="flex justify-between items-center pt-0 pb-3">
-                    <div className="flex items-center gap-4">
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => handleLike(post.id)}>
-                        <ThumbsUp className="w-4 h-4" />
-                        <span>{post.likes}</span>
-                      </Button>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => handleDislike(post.id)}>
-                        <ThumbsDown className="w-4 h-4" />
-                        <span>{post.dislikes}</span>
-                      </Button>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                        <MessageSquare className="w-4 h-4" />
-                        <span>{post.comments.length}</span>
-                      </Button>
-                    </div>
-                    <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                      <Share2 className="w-4 h-4" />
-                      <span>Share</span>
-                    </Button>
-                  </CardFooter>
-                  
-                  {post.comments.length > 0 && (
-                    <div className="px-6 pb-4 border-t pt-3">
-                      <h3 className="text-sm font-medium mb-3">Comments</h3>
-                      <ScrollArea className="max-h-[300px]">
-                        <div className="space-y-4">
-                          {post.comments.map((comment) => (
-                            <div key={comment.id} className="border-b pb-3 last:border-0">
-                              <div className="flex items-start gap-3">
-                                <Avatar className="w-8 h-8">
-                                  <AvatarImage src={comment.author.avatar} />
-                                  <AvatarFallback>
-                                    {comment.author.name.charAt(0)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                  <div className="flex justify-between">
-                                    <p className="text-sm font-medium">{comment.author.name}</p>
-                                    <p className="text-xs text-muted-foreground">{formatDate(new Date(comment.timestamp))}</p>
-                                  </div>
-                                  <p className="text-sm mt-1">{comment.content}</p>
-                                  <div className="flex items-center gap-3 mt-2">
-                                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs flex items-center gap-1" onClick={() => handleLike(post.id, comment.id)}>
-                                      <ThumbsUp className="w-3 h-3" />
-                                      <span>{comment.likes}</span>
-                                    </Button>
-                                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs flex items-center gap-1" onClick={() => handleDislike(post.id, comment.id)}>
-                                      <ThumbsDown className="w-3 h-3" />
-                                      <span>{comment.dislikes}</span>
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </div>
-                  )}
-                  
-                  <div className="px-6 pb-4 pt-2 border-t flex items-center gap-3">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={currentUser.avatar} />
-                      <AvatarFallback>
-                        {currentUser.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 flex items-center gap-2">
-                      <Input
-                        placeholder="Add a comment..."
-                        value={newComment[post.id] || ''}
-                        onChange={(e) => setNewComment({ ...newComment, [post.id]: e.target.value })}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddComment(post.id)}
-                      />
-                      <Button size="icon" variant="ghost" onClick={() => handleAddComment(post.id)}>
-                        <Send className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </TabsContent>
-            
-            <TabsContent value="crypto" className="mt-0">
-              {filteredPosts.filter(post => post.category === 'crypto').map((post) => (
-                <Card key={post.id} className="overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={post.author.avatar} />
-                          <AvatarFallback>
-                            {post.author.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <CardTitle className="text-lg">{post.title}</CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            Posted by {post.author.name} • {formatDate(new Date(post.timestamp))}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {post.author.id === currentUser.id && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="w-5 h-5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setEditingPost(post)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => handleDeletePost(post.id)}
-                            >
-                              <Trash className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-3">
-                    <p className="whitespace-pre-line">{post.content}</p>
-                  </CardContent>
-                  <CardFooter className="flex justify-between items-center pt-0 pb-3">
-                    <div className="flex items-center gap-4">
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => handleLike(post.id)}>
-                        <ThumbsUp className="w-4 h-4" />
-                        <span>{post.likes}</span>
-                      </Button>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => handleDislike(post.id)}>
-                        <ThumbsDown className="w-4 h-4" />
-                        <span>{post.dislikes}</span>
-                      </Button>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                        <MessageSquare className="w-4 h-4" />
-                        <span>{post.comments.length}</span>
-                      </Button>
-                    </div>
-                    <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                      <Share2 className="w-4 h-4" />
-                      <span>Share</span>
-                    </Button>
-                  </CardFooter>
-                  
-                  {post.comments.length > 0 && (
-                    <div className="px-6 pb-4 border-t pt-3">
-                      <h3 className="text-sm font-medium mb-3">Comments</h3>
-                      <ScrollArea className="max-h-[300px]">
-                        <div className="space-y-4">
-                          {post.comments.map((comment) => (
-                            <div key={comment.id} className="border-b pb-3 last:border-0">
-                              <div className="flex items-start gap-3">
-                                <Avatar className="w-8 h-8">
-                                  <AvatarImage src={comment.author.avatar} />
-                                  <AvatarFallback>
-                                    {comment.author.name.charAt(0)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                  <div className="flex justify-between">
-                                    <p className="text-sm font-medium">{comment.author.name}</p>
-                                    <p className="text-xs text-muted-foreground">{formatDate(new Date(comment.timestamp))}</p>
-                                  </div>
-                                  <p className="text-sm mt-1">{comment.content}</p>
-                                  <div className="flex items-center gap-3 mt-2">
-                                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs flex items-center gap-1" onClick={() => handleLike(post.id, comment.id)}>
-                                      <ThumbsUp className="w-3 h-3" />
-                                      <span>{comment.likes}</span>
-                                    </Button>
-                                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs flex items-center gap-1" onClick={() => handleDislike(post.id, comment.id)}>
-                                      <ThumbsDown className="w-3 h-3" />
-                                      <span>{comment.dislikes}</span>
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </div>
-                  )}
-                  
-                  <div className="px-6 pb-4 pt-2 border-t flex items-center gap-3">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={currentUser.avatar} />
-                      <AvatarFallback>
-                        {currentUser.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 flex items-center gap-2">
-                      <Input
-                        placeholder="Add a comment..."
-                        value={newComment[post.id] || ''}
-                        onChange={(e) => setNewComment({ ...newComment, [post.id]: e.target.value })}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddComment(post.id)}
-                      />
-                      <Button size="icon" variant="ghost" onClick={() => handleAddComment(post.id)}>
-                        <Send className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </TabsContent>
-            
-            <TabsContent value="analysis" className="mt-0">
-              {filteredPosts.filter(post => post.category === 'analysis
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </main>
+      
+      <Footer />
+    </div>
+  );
+};
 
+export default Community;

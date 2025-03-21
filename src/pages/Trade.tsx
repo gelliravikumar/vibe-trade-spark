@@ -34,6 +34,15 @@ const Trade = () => {
     
     loadStoredSettings();
     
+    // Add script for TradingView widget if not already loaded
+    if (!document.getElementById('tradingview-script')) {
+      const script = document.createElement('script');
+      script.id = 'tradingview-script';
+      script.src = 'https://s3.tradingview.com/tv.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+    
     // Refresh data when the trade page loads
     refreshData().catch(error => {
       toast.error("Failed to load market data. Please try again.");
