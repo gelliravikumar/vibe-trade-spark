@@ -46,7 +46,7 @@ const RealTrading = () => {
               </Button>
             </div>
             
-            <Alert variant="warning">
+            <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Important Notice</AlertTitle>
               <AlertDescription>

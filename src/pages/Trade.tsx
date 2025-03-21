@@ -7,7 +7,6 @@ import { useParams } from 'react-router-dom';
 import { useData } from '@/context/DataContext';
 import { toast } from 'sonner';
 import { PageLoader } from '@/components/common/Loader';
-import { PaperTradingProvider } from '@/hooks/use-paper-trading';
 
 const Trade = () => {
   const { symbol } = useParams<{ symbol: string }>();

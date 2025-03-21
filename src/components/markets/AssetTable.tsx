@@ -15,10 +15,11 @@ import {
   TableRow 
 } from '@/components/ui/table';
 
-interface AssetTableProps {
+export interface AssetTableProps {
   type: 'STOCK' | 'CRYPTO' | 'ALL';
   limit?: number;
   showSearch?: boolean;
+  compact?: boolean;
   className?: string;
 }
 
@@ -26,6 +27,7 @@ export const AssetTable: React.FC<AssetTableProps> = ({
   type,
   limit,
   showSearch = false,
+  compact = false,
   className = '',
 }) => {
   const { stocksData, cryptoData, isLoading } = useData();

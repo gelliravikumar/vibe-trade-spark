@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   Menu, 
   X,
@@ -16,13 +16,13 @@ import {
   Wallet,
   CreditCard
 } from 'lucide-react';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { ThemeToggle } from './ThemeToggle';
 import { DataSourceSelector } from '@/components/ui/DataSourceSelector';
 import { usePaperTrading } from '@/hooks/use-paper-trading';
 
 export const Navbar = () => {
   const location = useLocation();
-  const { isMobile } = useMobile();
+  const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isPaperTrading, setIsPaperTrading } = usePaperTrading();
   

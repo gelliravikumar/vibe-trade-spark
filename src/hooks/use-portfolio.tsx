@@ -16,7 +16,7 @@ interface PortfolioState {
   [symbol: string]: PortfolioPosition;
 }
 
-interface TradeHistoryItem {
+export interface TradeHistoryItem {
   id: string;
   date: Date;
   symbol: string;
