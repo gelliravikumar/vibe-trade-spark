@@ -4,6 +4,7 @@ import { AssetCard } from './AssetCard';
 import { useData } from '@/context/DataContext';
 import { CardSkeleton } from '@/components/common/Loader';
 import { Search } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 interface AssetListProps {
   type: 'STOCK' | 'CRYPTO' | 'ALL';
@@ -21,28 +22,41 @@ export const AssetList: React.FC<AssetListProps> = ({
   const { stocksData, cryptoData, isLoading } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   
-  let filteredAssets = [];
+  // Prepare filtered assets based on type and search term
+  let filteredStocks = [];
+  let filteredCrypto = [];
   
   if (type === 'STOCK' || type === 'ALL') {
-    filteredAssets.push(...stocksData);
+    filteredStocks = stocksData.filter(asset => 
+      searchTerm ? (
+        asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        asset.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ) : true
+    );
   }
   
   if (type === 'CRYPTO' || type === 'ALL') {
-    filteredAssets.push(...cryptoData);
-  }
-  
-  // Filter by search term if provided
-  if (searchTerm) {
-    filteredAssets = filteredAssets.filter(
-      asset => 
+    filteredCrypto = cryptoData.filter(asset => 
+      searchTerm ? (
         asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
         asset.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ) : true
     );
   }
   
   // Apply limit if provided
-  if (limit && filteredAssets.length > limit) {
-    filteredAssets = filteredAssets.slice(0, limit);
+  if (limit) {
+    const halfLimit = Math.ceil(limit / 2);
+    
+    if (type === 'ALL') {
+      // Split limit between stocks and crypto
+      filteredStocks = filteredStocks.slice(0, halfLimit);
+      filteredCrypto = filteredCrypto.slice(0, limit - filteredStocks.length);
+    } else if (type === 'STOCK') {
+      filteredStocks = filteredStocks.slice(0, limit);
+    } else if (type === 'CRYPTO') {
+      filteredCrypto = filteredCrypto.slice(0, limit);
+    }
   }
   
   return (
@@ -68,25 +82,63 @@ export const AssetList: React.FC<AssetListProps> = ({
             <CardSkeleton key={index} />
           ))}
         </div>
-      ) : filteredAssets.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredAssets.map((asset) => (
-            <AssetCard
-              key={asset.symbol}
-              symbol={asset.symbol}
-              name={asset.name}
-              price={asset.price}
-              previousPrice={asset.previousPrice}
-              change={asset.change}
-              changePercent={asset.changePercent}
-              type={asset.type}
-              className="h-full"
-            />
-          ))}
-        </div>
       ) : (
-        <div className="text-center py-10">
-          <p className="text-muted-foreground">No assets found</p>
+        <div>
+          {filteredStocks.length > 0 && (type === 'ALL' || type === 'STOCK') && (
+            <div className="mb-6">
+              {type === 'ALL' && (
+                <h3 className="text-lg font-medium mb-3">Stocks</h3>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredStocks.map((asset) => (
+                  <AssetCard
+                    key={asset.symbol}
+                    symbol={asset.symbol}
+                    name={asset.name}
+                    price={asset.price}
+                    previousPrice={asset.previousPrice}
+                    change={asset.change}
+                    changePercent={asset.changePercent}
+                    type={asset.type}
+                    className="h-full"
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {filteredStocks.length > 0 && filteredCrypto.length > 0 && type === 'ALL' && (
+            <Separator className="my-4" />
+          )}
+          
+          {filteredCrypto.length > 0 && (type === 'ALL' || type === 'CRYPTO') && (
+            <div>
+              {type === 'ALL' && (
+                <h3 className="text-lg font-medium mb-3">Cryptocurrencies</h3>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredCrypto.map((asset) => (
+                  <AssetCard
+                    key={asset.symbol}
+                    symbol={asset.symbol}
+                    name={asset.name}
+                    price={asset.price}
+                    previousPrice={asset.previousPrice}
+                    change={asset.change}
+                    changePercent={asset.changePercent}
+                    type={asset.type}
+                    className="h-full"
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {filteredStocks.length === 0 && filteredCrypto.length === 0 && (
+            <div className="text-center py-10">
+              <p className="text-muted-foreground">No assets found</p>
+            </div>
+          )}
         </div>
       )}
     </div>

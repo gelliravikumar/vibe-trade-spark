@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { PortfolioSummary } from '@/components/portfolio/PortfolioSummary';
-import { Wallet, Clock, BarChart3, Filter } from 'lucide-react';
+import { Wallet, Clock, BarChart3, Filter, ExternalLink } from 'lucide-react';
 import { AssetList } from '@/components/markets/AssetList';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PortfolioProvider, usePortfolio } from '@/hooks/use-portfolio';
@@ -18,6 +18,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { MiniChart } from '@/components/charts/MiniChart';
 import { useData } from '@/context/DataContext';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 type AssetType = 'ALL' | 'STOCK' | 'CRYPTO' | 'BANK' | 'OTHER';
 
@@ -138,6 +140,7 @@ const PortfolioContent = () => {
                       <th className="px-4 py-3 text-right">Chart</th>
                       <th className="px-4 py-3">Value</th>
                       <th className="px-4 py-3">Profit/Loss</th>
+                      <th className="px-4 py-3 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -150,7 +153,13 @@ const PortfolioContent = () => {
                       
                       return (
                         <tr key={position.symbol} className="bg-card">
-                          <td className="px-4 py-3 font-medium">{position.name}</td>
+                          <td className="px-4 py-3">
+                            <div className="font-medium hover:text-primary hover:underline cursor-pointer">
+                              <Link to={`/trade/${position.symbol}`}>
+                                {position.name}
+                              </Link>
+                            </div>
+                          </td>
                           <td className="px-4 py-3">
                             <Badge className={getAssetTypeColor(position.type)} variant="outline">
                               {position.type === 'STOCK' ? 'Stock' : 
@@ -173,13 +182,21 @@ const PortfolioContent = () => {
                           <td className={`px-4 py-3 ${isPositive ? 'text-success' : 'text-destructive'}`}>
                             {isPositive ? '+' : ''}₹{profitLoss.toLocaleString('en-IN', { maximumFractionDigits: 2 })} ({isPositive ? '+' : ''}{profitLossPercent.toFixed(2)}%)
                           </td>
+                          <td className="px-4 py-3 text-right">
+                            <Button variant="outline" size="sm" asChild className="h-8 px-3">
+                              <Link to={`/trade/${position.symbol}`}>
+                                <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                                Trade
+                              </Link>
+                            </Button>
+                          </td>
                         </tr>
                       );
                     })}
                     
                     {getFilteredPositions().length === 0 && (
                       <tr>
-                        <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">
+                        <td colSpan={9} className="px-4 py-6 text-center text-muted-foreground">
                           No assets found in this category.
                         </td>
                       </tr>
@@ -279,7 +296,7 @@ const PortfolioContent = () => {
       
       <div>
         <h2 className="text-xl font-semibold mb-4">Market Overview</h2>
-        <AssetList type="ALL" limit={3} />
+        <AssetList type="ALL" limit={6} />
       </div>
     </div>
   );
