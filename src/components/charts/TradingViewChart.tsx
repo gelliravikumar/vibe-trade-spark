@@ -1,6 +1,7 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useData } from '@/context/DataContext';
+import { Maximize2, Minimize2, ChevronsRight, Settings } from 'lucide-react';
 
 // Create a widget loader type
 declare global {
@@ -30,6 +31,8 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
   const widgetRef = useRef<any>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [chartStyle, setChartStyle] = useState<'1' | '2' | '3'>('1'); // 1: Bars, 2: Candles, 3: Line
   
   // Determine the proper TradingView symbol
   const getTradingViewSymbol = () => {
@@ -66,8 +69,43 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
           console.error('Error cleaning up TradingView widget:', error);
         }
       }
+      
+      // Remove fullscreen event listeners
+      if (isFullscreen) {
+        document.removeEventListener('keydown', handleEscKey);
+      }
     };
-  }, [symbol]); // Re-run when symbol changes
+  }, [symbol, isFullscreen, chartStyle]); // Re-run when symbol or fullscreen state changes
+  
+  useEffect(() => {
+    // Add ESC key handler when in fullscreen mode
+    if (isFullscreen) {
+      document.addEventListener('keydown', handleEscKey);
+    } else {
+      document.removeEventListener('keydown', handleEscKey);
+    }
+    
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [isFullscreen]);
+  
+  const handleEscKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsFullscreen(false);
+    }
+  };
+  
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+  
+  const changeChartStyle = (style: '1' | '2' | '3') => {
+    setChartStyle(style);
+    if (widgetRef.current) {
+      initWidget();
+    }
+  };
   
   const initWidget = () => {
     if (!containerRef.current || !window.TradingView) return;
@@ -86,7 +124,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
       interval: 'D', // Default to daily
       timezone: 'Asia/Kolkata',
       theme: theme,
-      style: '1',
+      style: chartStyle,
       locale: 'en',
       toolbar_bg: theme === 'dark' ? '#2B2B43' : '#F1F3F6',
       enable_publishing: false,
@@ -94,9 +132,9 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
       hide_side_toolbar: false,
       hide_top_toolbar: false,
       save_image: true,
-      height: height,
-      width: width,
-      autosize: autosize,
+      height: isFullscreen ? '100%' : height,
+      width: isFullscreen ? '100%' : width,
+      autosize: isFullscreen ? true : autosize,
       studies: [
         'MACD@tv-basicstudies',
         'RSI@tv-basicstudies',
@@ -111,11 +149,49 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
   };
 
   return (
-    <div 
-      id={`tradingview_chart_${symbol.toLowerCase().replace(/[^a-z0-9]/g, '')}`} 
-      ref={containerRef} 
-      style={{ height: height, width: width }}
-      className="rounded-lg overflow-hidden"
-    />
+    <div className={`relative ${isFullscreen ? 'fixed inset-0 z-50 bg-background' : ''}`}>
+      {/* Chart controls */}
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+        <div className="flex bg-secondary/80 backdrop-blur-sm rounded-md">
+          <button 
+            onClick={() => changeChartStyle('1')} 
+            className={`px-2 py-1 text-xs ${chartStyle === '1' ? 'text-primary font-bold' : 'text-muted-foreground'}`}
+          >
+            Bars
+          </button>
+          <button 
+            onClick={() => changeChartStyle('2')} 
+            className={`px-2 py-1 text-xs ${chartStyle === '2' ? 'text-primary font-bold' : 'text-muted-foreground'}`}
+          >
+            Candles
+          </button>
+          <button 
+            onClick={() => changeChartStyle('3')} 
+            className={`px-2 py-1 text-xs ${chartStyle === '3' ? 'text-primary font-bold' : 'text-muted-foreground'}`}
+          >
+            Line
+          </button>
+        </div>
+        
+        <button
+          onClick={toggleFullscreen}
+          className="p-1.5 bg-secondary/80 backdrop-blur-sm rounded-md hover:bg-secondary"
+          aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+        >
+          {isFullscreen ? (
+            <Minimize2 className="h-4 w-4" />
+          ) : (
+            <Maximize2 className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+      
+      <div 
+        id={`tradingview_chart_${symbol.toLowerCase().replace(/[^a-z0-9]/g, '')}`} 
+        ref={containerRef} 
+        style={{ height: isFullscreen ? '100vh' : height, width: isFullscreen ? '100vw' : width }}
+        className={`rounded-lg overflow-hidden ${isFullscreen ? 'p-4' : ''}`}
+      />
+    </div>
   );
 };
