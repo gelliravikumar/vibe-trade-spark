@@ -1,156 +1,128 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { useMobile } from '@/hooks/use-mobile';
 import { 
-  LineChart, 
-  BarChart3, 
-  PieChart, 
-  Newspaper, 
-  Users, 
-  Settings, 
-  Search, 
   Menu, 
-  X, 
-  Sun, 
-  Moon 
+  X,
+  Home, 
+  BarChart2, 
+  Newspaper, 
+  Briefcase, 
+  Users, 
+  Settings as SettingsIcon,
+  TrendingUp,
+  Wallet,
+  CreditCard
 } from 'lucide-react';
-import { UserProfile } from '@/components/profile/UserProfile';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { DataSourceSelector } from '@/components/ui/DataSourceSelector';
+import { usePaperTrading } from '@/hooks/use-paper-trading';
 
-export const Navbar: React.FC = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+export const Navbar = () => {
   const location = useLocation();
-
-  // Track scroll position for navbar styling
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Handle dark mode toggle
-  useEffect(() => {
-    // Check if dark mode is set in localStorage or prefer-color-scheme
-    const savedDarkMode = localStorage.getItem('tradingApp_darkMode');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    if (savedDarkMode) {
-      setIsDarkMode(savedDarkMode === 'true');
-    } else {
-      setIsDarkMode(prefersDark);
-    }
-  }, []);
+  const { isMobile } = useMobile();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isPaperTrading, setIsPaperTrading } = usePaperTrading();
   
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
-    // Save preference to localStorage
-    localStorage.setItem('tradingApp_darkMode', isDarkMode.toString());
-  }, [isDarkMode]);
-
-  // Navigation items
-  const navItems = [
-    { name: 'Markets', path: '/markets', icon: <LineChart className="w-5 h-5" /> },
-    { name: 'Trade', path: '/trade', icon: <BarChart3 className="w-5 h-5" /> },
-    { name: 'Portfolio', path: '/portfolio', icon: <PieChart className="w-5 h-5" /> },
-    { name: 'News', path: '/news', icon: <Newspaper className="w-5 h-5" /> },
-    { name: 'Community', path: '/community', icon: <Users className="w-5 h-5" /> },
-    { name: 'Settings', path: '/settings', icon: <Settings className="w-5 h-5" /> },
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+  
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
+  
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+  
+  const navLinks = [
+    { to: '/', label: 'Home', icon: <Home className="h-5 w-5" /> },
+    { to: '/markets', label: 'Markets', icon: <BarChart2 className="h-5 w-5" /> },
+    { to: '/trade', label: 'Trade', icon: <TrendingUp className="h-5 w-5" /> },
+    { to: '/paper-trading', label: 'Paper Trading', icon: <Wallet className="h-5 w-5" /> },
+    { to: '/real-trading', label: 'Real Trading', icon: <CreditCard className="h-5 w-5" /> },
+    { to: '/news', label: 'News', icon: <Newspaper className="h-5 w-5" /> },
+    { to: '/portfolio', label: 'Portfolio', icon: <Briefcase className="h-5 w-5" /> },
+    { to: '/community', label: 'Community', icon: <Users className="h-5 w-5" /> },
+    { to: '/settings', label: 'Settings', icon: <SettingsIcon className="h-5 w-5" /> },
   ];
-
-  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
-  const closeMobileMenu = () => setIsMobileMenuOpen(false);
   
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm' : 'bg-transparent'
-      }`}
-    >
+    <header className="fixed w-full z-50 backdrop-blur-md bg-background/80 border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
-          {/* Logo */}
-          <Link to="/" className="flex items-center" onClick={closeMobileMenu}>
-            <span className="text-xl font-semibold tracking-tight">TradeSmart</span>
-          </Link>
-
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center">
+              <TrendingUp className="h-8 w-8 text-primary" />
+              <span className="ml-2 text-xl font-bold">TradingApp</span>
+            </Link>
+          </div>
+          
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors ${
-                  location.pathname === item.path
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-foreground hover:bg-secondary'
-                }`}
+          {!isMobile && (
+            <nav className="hidden md:flex space-x-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`px-3 py-2 rounded-md text-sm font-medium flex items-center
+                    ${isActive(link.to) 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                  onClick={closeMenu}
+                >
+                  {link.icon}
+                  <span className="ml-1">{link.label}</span>
+                </Link>
+              ))}
+            </nav>
+          )}
+          
+          <div className="flex items-center space-x-2">
+            <DataSourceSelector />
+            <ThemeToggle />
+            
+            {/* Mobile Menu Button */}
+            {isMobile && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleMenu}
+                aria-label="Toggle menu"
+                className="md:hidden"
               >
-                {item.icon}
-                {item.name}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right side actions */}
-          <div className="flex items-center gap-4">
-            {/* Search button */}
-            <button 
-              className="p-2 rounded-full hover:bg-secondary"
-              aria-label="Search"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-            
-            {/* Dark mode toggle */}
-            <button 
-              className="p-2 rounded-full hover:bg-secondary"
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-            
-            {/* User profile */}
-            <UserProfile />
-
-            {/* Mobile menu button */}
-            <button
-              className="md:hidden p-2 rounded-full hover:bg-secondary"
-              onClick={toggleMobileMenu}
-              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-            >
-              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+                {isMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Mobile Navigation */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden glass-panel animate-fade-in">
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            {navItems.map((item) => (
+      
+      {/* Mobile Menu */}
+      {isMobile && isMenuOpen && (
+        <div className="md:hidden bg-background border-b">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            {navLinks.map((link) => (
               <Link
-                key={item.name}
-                to={item.path}
-                className={`block px-3 py-2 rounded-md text-base font-medium flex items-center gap-2 ${
-                  location.pathname === item.path
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-foreground hover:bg-secondary'
-                }`}
-                onClick={closeMobileMenu}
+                key={link.to}
+                to={link.to}
+                className={`block px-3 py-2 rounded-md text-base font-medium flex items-center
+                  ${isActive(link.to) 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                onClick={closeMenu}
               >
-                {item.icon}
-                {item.name}
+                {link.icon}
+                <span className="ml-2">{link.label}</span>
               </Link>
             ))}
           </div>

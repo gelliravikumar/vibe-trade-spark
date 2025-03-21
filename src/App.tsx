@@ -8,13 +8,15 @@ import Portfolio from './pages/Portfolio';
 import Community from './pages/Community';
 import Settings from './pages/Settings';
 import Trade from './pages/Trade';
+import PaperTrading from './pages/PaperTrading';
+import RealTrading from './pages/RealTrading';
 import NotFound from './pages/NotFound';
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from './components/ui/theme-provider';
-import { Toaster } from './components/ui/toaster';
+import { ThemeProvider } from '@/components/ui/theme-provider';
+import { Toaster } from 'sonner';
 import { DataProvider } from './context/DataContext';
 import { PortfolioProvider } from './hooks/use-portfolio';
+import { PaperTradingProvider } from './hooks/use-paper-trading';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 
 // Create a client
@@ -26,22 +28,26 @@ function App() {
       <TooltipProvider>
         <DataProvider>
           <PortfolioProvider>
-            <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-              <Router>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/markets" element={<Markets />} />
-                  <Route path="/news" element={<News />} />
-                  <Route path="/portfolio" element={<Portfolio />} />
-                  <Route path="/community" element={<Community />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/trade" element={<Trade />} />
-                  <Route path="/trade/:symbol" element={<Trade />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Router>
-              <Toaster />
-            </ThemeProvider>
+            <PaperTradingProvider>
+              <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+                <Router>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/markets" element={<Markets />} />
+                    <Route path="/news" element={<News />} />
+                    <Route path="/portfolio" element={<Portfolio />} />
+                    <Route path="/community" element={<Community />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/trade" element={<Trade />} />
+                    <Route path="/trade/:symbol" element={<Trade />} />
+                    <Route path="/paper-trading" element={<PaperTrading />} />
+                    <Route path="/real-trading" element={<RealTrading />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Router>
+                <Toaster />
+              </ThemeProvider>
+            </PaperTradingProvider>
           </PortfolioProvider>
         </DataProvider>
       </TooltipProvider>
