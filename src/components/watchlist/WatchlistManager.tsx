@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Star, Search, Plus, Trash2, Edit2, Save, X, FolderPlus, Folder, 
@@ -108,7 +107,6 @@ export const WatchlistManager: React.FC = () => {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [isCompact, setIsCompact] = useState(false);
   
-  // Load watchlists from localStorage on component mount
   useEffect(() => {
     const savedWatchlists = localStorage.getItem('tradingApp_watchlists');
     if (savedWatchlists) {
@@ -120,7 +118,6 @@ export const WatchlistManager: React.FC = () => {
     }
   }, []);
   
-  // Save watchlists to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('tradingApp_watchlists', JSON.stringify(watchlists));
   }, [watchlists]);
@@ -154,7 +151,6 @@ export const WatchlistManager: React.FC = () => {
   };
   
   const addToWatchlist = (asset: any, groupId?: string) => {
-    // If no groupId is provided, use the first group or the selected group
     const targetGroupId = groupId || selectedGroupId || currentWatchlist.groups[0].id;
     
     setWatchlists(prev => 
@@ -185,7 +181,6 @@ export const WatchlistManager: React.FC = () => {
     setSearchTerm('');
     setIsAddingItem(false);
     
-    // Get group name for the toast message
     const groupName = currentWatchlist.groups.find(g => g.id === targetGroupId)?.name || '';
     toast.success(`Added ${asset.symbol} to ${groupName}`);
   };
@@ -347,7 +342,6 @@ export const WatchlistManager: React.FC = () => {
   const moveItemToGroup = (fromGroupId: string, toGroupId: string, item: WatchlistItem) => {
     if (fromGroupId === toGroupId) return;
     
-    // First remove from current group
     setWatchlists(prev => 
       prev.map(list => 
         list.id === activeWatchlist
@@ -366,7 +360,6 @@ export const WatchlistManager: React.FC = () => {
       )
     );
     
-    // Then add to the target group
     setWatchlists(prev => 
       prev.map(list => 
         list.id === activeWatchlist
@@ -401,7 +394,6 @@ export const WatchlistManager: React.FC = () => {
     const newGroups = [...currentWatchlist.groups];
     const targetIndex = direction === 'up' ? groupIndex - 1 : groupIndex + 1;
     
-    // Swap the groups
     [newGroups[groupIndex], newGroups[targetIndex]] = [newGroups[targetIndex], newGroups[groupIndex]];
     
     setWatchlists(prev => 
@@ -413,7 +405,6 @@ export const WatchlistManager: React.FC = () => {
     );
   };
   
-  // Get the total items count across all groups in the active watchlist
   const totalItems = currentWatchlist.groups.reduce(
     (total, group) => total + group.items.length, 
     0
@@ -429,7 +420,6 @@ export const WatchlistManager: React.FC = () => {
       <DropdownMenuContent align="end" className="w-40">
         <DropdownMenuItem onClick={() => {
           setNewGroupName(group.name);
-          // Use prompt for simplicity, in a real app you'd use a modal
           const name = prompt("Enter new group name:", group.name);
           if (name) renameGroup(group.id, name);
         }}>
@@ -457,7 +447,6 @@ export const WatchlistManager: React.FC = () => {
   );
   
   const ItemMenu = ({ groupId, item }: { groupId: string, item: WatchlistItem }) => {
-    // Filter out the current group to avoid moving to the same group
     const otherGroups = currentWatchlist.groups.filter(g => g.id !== groupId);
     
     return (
@@ -539,7 +528,6 @@ export const WatchlistManager: React.FC = () => {
         </div>
       </div>
       
-      {/* Watchlist tabs */}
       <div className="flex flex-wrap gap-1.5 mb-3">
         {watchlists.map(list => (
           <button
@@ -558,7 +546,6 @@ export const WatchlistManager: React.FC = () => {
         ))}
       </div>
       
-      {/* Active watchlist header */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center">
           <h3 className="font-medium text-sm">
@@ -604,7 +591,7 @@ export const WatchlistManager: React.FC = () => {
             className="h-7 w-7 p-0" 
             onClick={() => setIsCompact(!isCompact)}
           >
-            <ChevronsRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
             <span className="sr-only">Compact View</span>
           </Button>
           
@@ -618,7 +605,6 @@ export const WatchlistManager: React.FC = () => {
         </div>
       </div>
       
-      {/* Search interface when adding items */}
       {isAddingItem && (
         <div className="mb-3">
           <div className="relative">
@@ -685,7 +671,6 @@ export const WatchlistManager: React.FC = () => {
         </div>
       )}
       
-      {/* Group management */}
       <div className="flex justify-between items-center mb-2">
         <div className="text-xs text-muted-foreground">
           {totalItems} items in {currentWatchlist.groups.length} groups
@@ -726,7 +711,6 @@ export const WatchlistManager: React.FC = () => {
         </div>
       )}
       
-      {/* Watchlist groups */}
       <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-26rem)]">
         {currentWatchlist.groups.map(group => (
           <div 
