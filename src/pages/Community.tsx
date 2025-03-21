@@ -2,708 +2,259 @@
 import React, { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
+  Heart, 
   MessageCircle, 
-  ThumbsUp, 
-  MessageSquare, 
   Share2, 
-  BarChart2, 
-  Bookmark,
-  Users,
-  Trending,
-  Clock,
-  Filter,
-  PlusCircle,
-  Search
+  TrendingUp, 
+  MessageSquare, 
+  Users, 
+  Plus, 
+  ThumbsUp, 
+  Bookmark, 
+  MoreHorizontal
 } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { toast } from "sonner";
-
-interface Post {
-  id: string;
-  user: {
-    name: string;
-    avatar: string;
-    handle: string;
-  };
-  content: string;
-  timestamp: string;
-  likes: number;
-  comments: number;
-  shares: number;
-  isLiked: boolean;
-  isBookmarked: boolean;
-  tags: string[];
-}
-
-const initialPosts: Post[] = [
-  {
-    id: '1',
-    user: {
-      name: 'Rahul Sharma',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul',
-      handle: '@rahulsharma'
-    },
-    content: "Just bought some $BTC at the dip! Looking forward to the halving event next month. What are your price predictions? #Bitcoin #Crypto #Trading",
-    timestamp: '2 hours ago',
-    likes: 24,
-    comments: 8,
-    shares: 3,
-    isLiked: false,
-    isBookmarked: false,
-    tags: ['Bitcoin', 'Crypto', 'Trading']
-  },
-  {
-    id: '2',
-    user: {
-      name: 'Priya Patel',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya',
-      handle: '@priyapatel'
-    },
-    content: "I've been researching $ETH for my portfolio. The upcoming ETH 2.0 upgrade seems promising for scalability. Any thoughts from the community? #Ethereum #DeFi",
-    timestamp: '5 hours ago',
-    likes: 32,
-    comments: 12,
-    shares: 7,
-    isLiked: true,
-    isBookmarked: true,
-    tags: ['Ethereum', 'DeFi']
-  },
-  {
-    id: '3',
-    user: {
-      name: 'Amit Verma',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Amit',
-      handle: '@amitverma'
-    },
-    content: "Just set up my first hardware wallet! Feels great to truly own my crypto. Any security tips I should be aware of? #Security #Crypto #HardwareWallet",
-    timestamp: '1 day ago',
-    likes: 45,
-    comments: 23,
-    shares: 5,
-    isLiked: false,
-    isBookmarked: true,
-    tags: ['Security', 'Crypto', 'HardwareWallet']
-  },
-  {
-    id: '4',
-    user: {
-      name: 'Sneha Gupta',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sneha',
-      handle: '@snehagupta'
-    },
-    content: "Analysis: The INR to crypto volumes have increased by 45% in the last quarter. Indian traders are becoming more active! What do you think about the Indian crypto market? #India #CryptoTrading",
-    timestamp: '2 days ago',
-    likes: 62,
-    comments: 18,
-    shares: 14,
-    isLiked: true,
-    isBookmarked: false,
-    tags: ['India', 'CryptoTrading']
-  }
-];
 
 const Community = () => {
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [newPostContent, setNewPostContent] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const handleLike = (postId: string) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        const isLiked = !post.isLiked;
-        return {
-          ...post,
-          isLiked,
-          likes: isLiked ? post.likes + 1 : post.likes - 1
-        };
-      }
-      return post;
-    }));
-  };
+  const [posts, setPosts] = useState([
+    {
+      id: 1,
+      author: {
+        name: 'Alex Johnson',
+        handle: '@alexjohnson',
+        avatar: 'https://i.pravatar.cc/150?img=1'
+      },
+      content: 'Just increased my position in $TSLA after the recent dip. Their new AI initiatives look promising for long-term growth. What are your thoughts on the EV market outlook for 2023?',
+      timestamp: '2h ago',
+      likes: 24,
+      comments: 5,
+      shares: 3,
+      category: 'stocks',
+      tags: ['Tesla', 'EV Market', 'Investment Strategy']
+    },
+    {
+      id: 2,
+      author: {
+        name: 'Sophia Chen',
+        handle: '@sophiachen',
+        avatar: 'https://i.pravatar.cc/150?img=5'
+      },
+      content: 'Bitcoin hitting $60K again! Crypto bull market seems to be in full swing. My strategy is to hold 70% BTC, 20% ETH, and 10% in promising altcoins. How about you? #crypto #bitcoin',
+      timestamp: '5h ago',
+      likes: 42,
+      comments: 11,
+      shares: 7,
+      category: 'crypto',
+      tags: ['Bitcoin', 'Crypto', 'Bull Market']
+    },
+    {
+      id: 3,
+      author: {
+        name: 'Marcus Williams',
+        handle: '@marcuswilliams',
+        avatar: 'https://i.pravatar.cc/150?img=8'
+      },
+      content: "Anyone following the developments with DeFi protocols? I've been yield farming on Aave and Compound with impressive returns. Important to understand the smart contract risks though. Would love to hear about your DeFi experiences!",
+      timestamp: '1d ago',
+      likes: 18,
+      comments: 9,
+      shares: 2,
+      category: 'defi',
+      tags: ['DeFi', 'Yield Farming', 'Smart Contracts']
+    }
+  ]);
   
-  const handleBookmark = (postId: string) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          isBookmarked: !post.isBookmarked
-        };
-      }
-      return post;
-    }));
-    
-    toast.success("Post saved to your bookmarks!");
-  };
-
-  const handleComment = (postId: string) => {
-    toast.info("Comments feature coming soon!");
-  };
-
-  const handleShare = (postId: string) => {
-    toast.info("Share feature coming soon!");
-  };
-
-  const handleNewPost = () => {
-    if (!newPostContent.trim()) {
-      toast.error("Please enter some content for your post.");
+  const [newPost, setNewPost] = useState('');
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
+  
+  const handlePostSubmit = () => {
+    if (!newPost.trim()) {
+      toast.error("Post content cannot be empty");
       return;
     }
     
-    // Extract hashtags
-    const tags = newPostContent.match(/#(\w+)/g)?.map(tag => tag.slice(1)) || [];
-    
-    const newPost: Post = {
-      id: Date.now().toString(),
-      user: {
-        name: 'You',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=You',
-        handle: '@you'
+    const post = {
+      id: posts.length + 1,
+      author: {
+        name: 'Current User',
+        handle: '@currentuser',
+        avatar: 'https://i.pravatar.cc/150?img=12'
       },
-      content: newPostContent,
+      content: newPost,
       timestamp: 'Just now',
       likes: 0,
       comments: 0,
       shares: 0,
-      isLiked: false,
-      isBookmarked: false,
-      tags
+      category: 'general',
+      tags: ['New Post']
     };
     
-    setPosts([newPost, ...posts]);
-    setNewPostContent('');
-    toast.success("Post published successfully!");
+    setPosts([post, ...posts]);
+    setNewPost('');
+    setIsCreatingPost(false);
+    toast.success("Post created successfully!");
   };
-
-  const handleDelete = (postId: string) => {
-    setPosts(posts.filter(post => post.id !== postId));
-    toast.success("Post deleted successfully!");
+  
+  const handleLike = (postId: number) => {
+    setPosts(posts.map(post => {
+      if (post.id === postId) {
+        return { ...post, likes: post.likes + 1 };
+      }
+      return post;
+    }));
+    toast("Post liked!");
   };
-
-  // Filter posts based on search term
-  const filteredPosts = posts.filter(post => 
-    post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
+  
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      
-      <main className="flex-grow pt-24 pb-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Community</h1>
-              <p className="text-muted-foreground">
-                Connect with traders, share insights, and learn from the community
-              </p>
+      <div className="container mx-auto flex-grow p-4 md:p-6 max-w-6xl">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">Community</h1>
+          <Button onClick={() => setIsCreatingPost(true)} className="bg-primary text-primary-foreground">
+            <Plus className="mr-2 h-4 w-4" /> Create Post
+          </Button>
+        </div>
+        
+        <Tabs defaultValue="trending" className="mb-8">
+          <TabsList className="grid w-full md:w-[400px] grid-cols-3">
+            <TabsTrigger value="trending">
+              <TrendingUp className="mr-2 h-4 w-4" /> Trending
+            </TabsTrigger>
+            <TabsTrigger value="latest">
+              <MessageSquare className="mr-2 h-4 w-4" /> Latest
+            </TabsTrigger>
+            <TabsTrigger value="following">
+              <Users className="mr-2 h-4 w-4" /> Following
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="trending" className="mt-4">
+            <div className="space-y-4">
+              {posts.sort((a, b) => b.likes - a.likes).map(post => (
+                <PostCard key={post.id} post={post} onLike={handleLike} />
+              ))}
             </div>
-            
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search posts..."
-                className="pl-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+          </TabsContent>
+          
+          <TabsContent value="latest" className="mt-4">
+            <div className="space-y-4">
+              {posts.map(post => (
+                <PostCard key={post.id} post={post} onLike={handleLike} />
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="following" className="mt-4">
+            <div className="p-8 text-center">
+              <p className="text-muted-foreground">Follow more users to see their posts here.</p>
+            </div>
+          </TabsContent>
+        </Tabs>
+        
+        <Dialog open={isCreatingPost} onOpenChange={setIsCreatingPost}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Create New Post</DialogTitle>
+              <DialogDescription>
+                Share your insights, questions, or news with the community
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <Textarea 
+                placeholder="What's on your mind about trading and investments?" 
+                className="min-h-[150px]"
+                value={newPost}
+                onChange={(e) => setNewPost(e.target.value)}
               />
             </div>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-8">
-              <Card className="mb-6">
-                <CardContent className="pt-6">
-                  <Textarea
-                    placeholder="Share your thoughts, ideas, or market insights..."
-                    className="resize-none mb-4"
-                    rows={3}
-                    value={newPostContent}
-                    onChange={(e) => setNewPostContent(e.target.value)}
-                  />
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm text-muted-foreground">
-                      Use #hashtags to categorize your post
-                    </div>
-                    <Button onClick={handleNewPost}>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Post
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Tabs defaultValue="all">
-                <TabsList className="w-full mb-6">
-                  <TabsTrigger value="all" className="flex-grow">
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    All Posts
-                  </TabsTrigger>
-                  <TabsTrigger value="trending" className="flex-grow">
-                    <Trending className="w-4 h-4 mr-2" />
-                    Trending
-                  </TabsTrigger>
-                  <TabsTrigger value="analysis" className="flex-grow">
-                    <BarChart2 className="w-4 h-4 mr-2" />
-                    Analysis
-                  </TabsTrigger>
-                  <TabsTrigger value="bookmarks" className="flex-grow">
-                    <Bookmark className="w-4 h-4 mr-2" />
-                    Bookmarked
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="all" className="space-y-4">
-                  {filteredPosts.length > 0 ? (
-                    filteredPosts.map(post => (
-                      <Card key={post.id} className="overflow-hidden">
-                        <CardHeader className="pb-3">
-                          <div className="flex justify-between">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-10 w-10">
-                                <img src={post.user.avatar} alt={post.user.name} />
-                              </Avatar>
-                              <div>
-                                <div className="font-semibold">{post.user.name}</div>
-                                <div className="text-sm text-muted-foreground flex items-center gap-2">
-                                  <span>{post.user.handle}</span>
-                                  <span>•</span>
-                                  <span>{post.timestamp}</span>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {post.user.handle === '@you' && (
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    •••
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Delete Post?</DialogTitle>
-                                    <DialogDescription>
-                                      This action cannot be undone. The post will be permanently deleted.
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  <DialogFooter>
-                                    <Button
-                                      variant="destructive"
-                                      onClick={() => handleDelete(post.id)}
-                                    >
-                                      Delete
-                                    </Button>
-                                  </DialogFooter>
-                                </DialogContent>
-                              </Dialog>
-                            )}
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pb-3">
-                          <p className="whitespace-pre-wrap">{post.content}</p>
-                          
-                          {post.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-3">
-                              {post.tags.map(tag => (
-                                <span 
-                                  key={tag} 
-                                  className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
-                                >
-                                  #{tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </CardContent>
-                        <CardFooter className="border-t pt-3 flex justify-between">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleLike(post.id)}
-                            className={post.isLiked ? "text-primary" : ""}
-                          >
-                            <ThumbsUp className="w-4 h-4 mr-2" />
-                            {post.likes}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleComment(post.id)}
-                          >
-                            <MessageSquare className="w-4 h-4 mr-2" />
-                            {post.comments}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleShare(post.id)}
-                          >
-                            <Share2 className="w-4 h-4 mr-2" />
-                            {post.shares}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleBookmark(post.id)}
-                            className={post.isBookmarked ? "text-primary" : ""}
-                          >
-                            <Bookmark className="w-4 h-4" />
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))
-                  ) : (
-                    <Card>
-                      <CardContent className="pt-6 pb-6 text-center">
-                        <p className="text-muted-foreground">No posts found matching your search.</p>
-                      </CardContent>
-                    </Card>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="trending" className="space-y-4">
-                  {filteredPosts
-                    .sort((a, b) => b.likes - a.likes)
-                    .slice(0, 3)
-                    .map(post => (
-                      <Card key={post.id}>
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              <img src={post.user.avatar} alt={post.user.name} />
-                            </Avatar>
-                            <div>
-                              <div className="font-semibold">{post.user.name}</div>
-                              <div className="text-sm text-muted-foreground flex items-center gap-2">
-                                <span>{post.user.handle}</span>
-                                <span>•</span>
-                                <span>{post.timestamp}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pb-3">
-                          <p>{post.content}</p>
-                          
-                          {post.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-3">
-                              {post.tags.map(tag => (
-                                <span 
-                                  key={tag} 
-                                  className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
-                                >
-                                  #{tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </CardContent>
-                        <CardFooter className="border-t pt-3 flex justify-between">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleLike(post.id)}
-                            className={post.isLiked ? "text-primary" : ""}
-                          >
-                            <ThumbsUp className="w-4 h-4 mr-2" />
-                            {post.likes}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleComment(post.id)}
-                          >
-                            <MessageSquare className="w-4 h-4 mr-2" />
-                            {post.comments}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleShare(post.id)}
-                          >
-                            <Share2 className="w-4 h-4 mr-2" />
-                            {post.shares}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleBookmark(post.id)}
-                            className={post.isBookmarked ? "text-primary" : ""}
-                          >
-                            <Bookmark className="w-4 h-4" />
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                </TabsContent>
-                
-                <TabsContent value="analysis" className="space-y-4">
-                  {filteredPosts
-                    .filter(post => post.content.toLowerCase().includes('analysis') || 
-                                    post.tags.some(tag => tag.includes('Analysis')))
-                    .map(post => (
-                      <Card key={post.id}>
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              <img src={post.user.avatar} alt={post.user.name} />
-                            </Avatar>
-                            <div>
-                              <div className="font-semibold">{post.user.name}</div>
-                              <div className="text-sm text-muted-foreground flex items-center gap-2">
-                                <span>{post.user.handle}</span>
-                                <span>•</span>
-                                <span>{post.timestamp}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pb-3">
-                          <p>{post.content}</p>
-                          
-                          {post.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-3">
-                              {post.tags.map(tag => (
-                                <span 
-                                  key={tag} 
-                                  className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
-                                >
-                                  #{tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </CardContent>
-                        <CardFooter className="border-t pt-3 flex justify-between">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleLike(post.id)}
-                            className={post.isLiked ? "text-primary" : ""}
-                          >
-                            <ThumbsUp className="w-4 h-4 mr-2" />
-                            {post.likes}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleComment(post.id)}
-                          >
-                            <MessageSquare className="w-4 h-4 mr-2" />
-                            {post.comments}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleShare(post.id)}
-                          >
-                            <Share2 className="w-4 h-4 mr-2" />
-                            {post.shares}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleBookmark(post.id)}
-                            className={post.isBookmarked ? "text-primary" : ""}
-                          >
-                            <Bookmark className="w-4 h-4" />
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                </TabsContent>
-                
-                <TabsContent value="bookmarks" className="space-y-4">
-                  {filteredPosts
-                    .filter(post => post.isBookmarked)
-                    .map(post => (
-                      <Card key={post.id}>
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              <img src={post.user.avatar} alt={post.user.name} />
-                            </Avatar>
-                            <div>
-                              <div className="font-semibold">{post.user.name}</div>
-                              <div className="text-sm text-muted-foreground flex items-center gap-2">
-                                <span>{post.user.handle}</span>
-                                <span>•</span>
-                                <span>{post.timestamp}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pb-3">
-                          <p>{post.content}</p>
-                          
-                          {post.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-3">
-                              {post.tags.map(tag => (
-                                <span 
-                                  key={tag} 
-                                  className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
-                                >
-                                  #{tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </CardContent>
-                        <CardFooter className="border-t pt-3 flex justify-between">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleLike(post.id)}
-                            className={post.isLiked ? "text-primary" : ""}
-                          >
-                            <ThumbsUp className="w-4 h-4 mr-2" />
-                            {post.likes}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleComment(post.id)}
-                          >
-                            <MessageSquare className="w-4 h-4 mr-2" />
-                            {post.comments}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleShare(post.id)}
-                          >
-                            <Share2 className="w-4 h-4 mr-2" />
-                            {post.shares}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleBookmark(post.id)}
-                            className={post.isBookmarked ? "text-primary" : ""}
-                          >
-                            <Bookmark className="w-4 h-4" />
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                </TabsContent>
-              </Tabs>
-            </div>
-            
-            <div className="lg:col-span-4 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Trending className="w-5 h-5 mr-2" />
-                    Trending Topics
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <div className="font-medium">#Bitcoin</div>
-                      <div className="text-sm text-muted-foreground">2.5K posts</div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="font-medium">#DeFi</div>
-                      <div className="text-sm text-muted-foreground">1.8K posts</div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="font-medium">#Altcoins</div>
-                      <div className="text-sm text-muted-foreground">1.2K posts</div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="font-medium">#NFT</div>
-                      <div className="text-sm text-muted-foreground">950 posts</div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="font-medium">#TradingTips</div>
-                      <div className="text-sm text-muted-foreground">780 posts</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="w-5 h-5 mr-2" />
-                    Who to Follow
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {[
-                      { name: 'Crypto Expert', handle: '@cryptoexpert', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Expert' },
-                      { name: 'Trader Pro', handle: '@traderpro', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Trader' },
-                      { name: 'Market Analyst', handle: '@marketanalyst', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Analyst' }
-                    ].map((profile, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <img src={profile.avatar} alt={profile.name} />
-                          </Avatar>
-                          <div>
-                            <div className="font-semibold">{profile.name}</div>
-                            <div className="text-sm text-muted-foreground">{profile.handle}</div>
-                          </div>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          Follow
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Clock className="w-5 h-5 mr-2" />
-                    Latest Activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                  <div className="space-y-4">
-                    <div className="border-l-2 border-primary pl-4 pb-4">
-                      <p className="font-medium">Rahul Sharma posted about Bitcoin</p>
-                      <p className="text-muted-foreground">2 hours ago</p>
-                    </div>
-                    <div className="border-l-2 border-primary pl-4 pb-4">
-                      <p className="font-medium">Priya Patel commented on Ethereum analysis</p>
-                      <p className="text-muted-foreground">5 hours ago</p>
-                    </div>
-                    <div className="border-l-2 border-primary pl-4">
-                      <p className="font-medium">New market report published</p>
-                      <p className="text-muted-foreground">yesterday</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </main>
-      
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreatingPost(false)}>Cancel</Button>
+              <Button onClick={handlePostSubmit}>Post</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
       <Footer />
     </div>
+  );
+};
+
+interface PostCardProps {
+  post: {
+    id: number;
+    author: {
+      name: string;
+      handle: string;
+      avatar: string;
+    };
+    content: string;
+    timestamp: string;
+    likes: number;
+    comments: number;
+    shares: number;
+    category: string;
+    tags: string[];
+  };
+  onLike: (postId: number) => void;
+}
+
+const PostCard = ({ post, onLike }: PostCardProps) => {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <div className="flex items-center space-x-3">
+            <Avatar>
+              <AvatarImage src={post.author.avatar} alt={post.author.name} />
+              <AvatarFallback>{post.author.name[0]}</AvatarFallback>
+            </Avatar>
+            <div>
+              <CardTitle className="text-base font-semibold">{post.author.name}</CardTitle>
+              <CardDescription>{post.author.handle} · {post.timestamp}</CardDescription>
+            </div>
+          </div>
+          <Button variant="ghost" size="icon">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="pb-2">
+        <p className="mb-3">{post.content}</p>
+        <div className="flex flex-wrap gap-2">
+          {post.tags.map((tag, i) => (
+            <Badge key={i} variant="secondary" className="text-xs">#{tag.replace(/\s/g, '')}</Badge>
+          ))}
+        </div>
+      </CardContent>
+      <CardFooter className="pt-2">
+        <div className="flex space-x-4 text-sm text-muted-foreground">
+          <Button variant="ghost" size="sm" onClick={() => onLike(post.id)}>
+            <Heart className="mr-1 h-4 w-4" /> {post.likes}
+          </Button>
+          <Button variant="ghost" size="sm">
+            <MessageCircle className="mr-1 h-4 w-4" /> {post.comments}
+          </Button>
+          <Button variant="ghost" size="sm">
+            <Share2 className="mr-1 h-4 w-4" /> {post.shares}
+          </Button>
+          <div className="flex-grow"></div>
+          <Button variant="ghost" size="sm">
+            <Bookmark className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardFooter>
+    </Card>
   );
 };
 
