@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import DetailedChart from '@/components/charts/DetailedChart';
 import { TradingViewChart } from '@/components/charts/TradingViewChart';
@@ -129,6 +128,32 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
   
   const isPositive = asset.change >= 0;
   
+  const generateChartData = (asset: any) => {
+    if (!asset) return [];
+    
+    const basePrice = asset.price;
+    const data = [];
+    
+    for (let i = 0; i < 30; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - (30 - i));
+      
+      const dayFactor = Math.sin(i / 5) * 0.1 + 0.95 + (Math.random() * 0.1);
+      const price = basePrice * dayFactor;
+      const volume = Math.round(asset.volume * (0.7 + Math.random() * 0.6));
+      
+      data.push({
+        date: date.toISOString().split('T')[0],
+        close: parseFloat(price.toFixed(2)),
+        volume: volume
+      });
+    }
+    
+    return data;
+  };
+  
+  const chartData = generateChartData(asset);
+  
   return (
     <div className="max-w-7xl mx-auto px-4 pt-20 pb-10">
       <button onClick={handleBack} className="flex items-center text-sm mb-4">
@@ -190,7 +215,10 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
                 height={400}
               />
             ) : (
-              <DetailedChart symbol={asset.symbol} type={asset.type} />
+              <DetailedChart 
+                data={chartData} 
+                height={400}
+              />
             )}
           </div>
           

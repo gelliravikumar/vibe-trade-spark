@@ -13,8 +13,13 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-interface DetailedChartProps {
-  data: any[];
+export interface DetailedChartProps {
+  data: Array<{
+    date: string;
+    close: number;
+    volume: number;
+    [key: string]: any;
+  }>;
   height?: number;
   width?: string | number;
 }
