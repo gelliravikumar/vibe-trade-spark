@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { DetailedChart } from '@/components/charts/DetailedChart';
+import DetailedChart from '@/components/charts/DetailedChart';
 import { TradingViewChart } from '@/components/charts/TradingViewChart';
 import { DataSourceSelector } from '@/components/ui/DataSourceSelector';
 import { useNavigate } from 'react-router-dom';
