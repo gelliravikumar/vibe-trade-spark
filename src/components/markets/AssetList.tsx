@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { AssetCard } from './AssetCard';
 import { useData } from '@/context/DataContext';
 import { CardSkeleton } from '@/components/common/Loader';
-import { Search, ChevronUp, ChevronDown, Filter } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Filter, BarChart3, LineChart as LineChartIcon } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -38,7 +37,6 @@ export const AssetList: React.FC<AssetListProps> = ({
     }
   };
   
-  // Prepare filtered assets based on type and search term
   let filteredStocks = [];
   let filteredCrypto = [];
   
@@ -60,7 +58,6 @@ export const AssetList: React.FC<AssetListProps> = ({
     );
   }
   
-  // Sort assets
   const sortAssets = (assets: any[]) => {
     return [...assets].sort((a, b) => {
       if (sortBy === 'name') {
@@ -83,12 +80,10 @@ export const AssetList: React.FC<AssetListProps> = ({
   filteredStocks = sortAssets(filteredStocks);
   filteredCrypto = sortAssets(filteredCrypto);
   
-  // Apply limit if provided
   if (limit) {
     const halfLimit = Math.ceil(limit / 2);
     
     if (type === 'ALL') {
-      // Split limit between stocks and crypto
       filteredStocks = filteredStocks.slice(0, halfLimit);
       filteredCrypto = filteredCrypto.slice(0, limit - filteredStocks.length);
     } else if (type === 'STOCK') {
@@ -98,7 +93,6 @@ export const AssetList: React.FC<AssetListProps> = ({
     }
   }
   
-  // Render list view header
   const renderListHeader = () => {
     return (
       <div className="hidden md:grid md:grid-cols-12 gap-4 bg-muted/30 rounded-md p-3 mb-3 text-sm font-medium">
@@ -125,7 +119,6 @@ export const AssetList: React.FC<AssetListProps> = ({
     );
   };
   
-  // Render list view row
   const renderListItem = (asset: any) => {
     return (
       <div key={asset.symbol} className="grid grid-cols-2 md:grid-cols-12 gap-4 p-3 border-b border-border/50 hover:bg-muted/20 transition-colors">
@@ -190,7 +183,7 @@ export const AssetList: React.FC<AssetListProps> = ({
             <div className={cn("mb-6", {"glass-panel rounded-lg p-4": type === 'ALL'})}>
               {type === 'ALL' && (
                 <h3 className="text-lg font-medium mb-3 flex items-center">
-                  <CandlestickChart className="h-5 w-5 mr-2 text-primary/70" />
+                  <BarChart3 className="h-5 w-5 mr-2 text-primary/70" />
                   Stocks
                 </h3>
               )}
@@ -229,7 +222,7 @@ export const AssetList: React.FC<AssetListProps> = ({
             <div className={cn("mb-6", {"glass-panel rounded-lg p-4": type === 'ALL'})}>
               {type === 'ALL' && (
                 <h3 className="text-lg font-medium mb-3 flex items-center">
-                  <LineChart className="h-5 w-5 mr-2 text-primary/70" />
+                  <LineChartIcon className="h-5 w-5 mr-2 text-primary/70" />
                   Cryptocurrencies
                 </h3>
               )}

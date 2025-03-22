@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { AssetList } from '@/components/markets/AssetList';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataSourceSelector } from '@/components/ui/DataSourceSelector';
-import { LineChart, CandlestickChart, TrendingUp, Search, SlidersHorizontal, Info } from 'lucide-react';
+import { LineChart as LineChartIcon, BarChart3, TrendingUp, Search, SlidersHorizontal, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -103,15 +102,15 @@ const Markets = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <TabsList className="p-1 bg-muted/30">
                 <TabsTrigger value="all" className="flex items-center gap-1.5 data-[state=active]:bg-background">
-                  <LineChart className="w-4 h-4" />
+                  <LineChartIcon className="w-4 h-4" />
                   All Assets
                 </TabsTrigger>
                 <TabsTrigger value="stocks" className="flex items-center gap-1.5 data-[state=active]:bg-background">
-                  <CandlestickChart className="w-4 h-4" />
+                  <BarChart3 className="w-4 h-4" />
                   Stocks
                 </TabsTrigger>
                 <TabsTrigger value="crypto" className="flex items-center gap-1.5 data-[state=active]:bg-background">
-                  <LineChart className="w-4 h-4" />
+                  <LineChartIcon className="w-4 h-4" />
                   Cryptocurrencies
                 </TabsTrigger>
               </TabsList>
