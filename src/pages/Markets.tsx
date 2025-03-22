@@ -1,9 +1,9 @@
+
 import React, { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { AssetList } from '@/components/markets/AssetList';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DataSourceSelector } from '@/components/ui/DataSourceSelector';
 import { LineChart as LineChartIcon, BarChart3, TrendingUp, Search, SlidersHorizontal, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -32,8 +32,6 @@ const Markets = () => {
               </div>
               
               <div className="w-full md:w-72 flex flex-col gap-2">
-                <DataSourceSelector />
-                
                 <div className="flex space-x-2">
                   <Button 
                     variant="outline" 

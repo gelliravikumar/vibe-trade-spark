@@ -11,6 +11,9 @@ import Trade from './pages/Trade';
 import PaperTrading from './pages/PaperTrading';
 import RealTrading from './pages/RealTrading';
 import NotFound from './pages/NotFound';
+import Dashboard from './pages/Dashboard';
+import Learn from './pages/Learn';
+import TaxDocuments from './pages/TaxDocuments';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { Toaster } from 'sonner';
@@ -33,15 +36,18 @@ function App() {
                 <Router>
                   <Routes>
                     <Route path="/" element={<Index />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/markets" element={<Markets />} />
                     <Route path="/news" element={<News />} />
                     <Route path="/portfolio" element={<Portfolio />} />
                     <Route path="/community" element={<Community />} />
                     <Route path="/settings" element={<Settings />} />
+                    <Route path="/learn" element={<Learn />} />
                     <Route path="/trade" element={<Trade />} />
                     <Route path="/trade/:symbol" element={<Trade />} />
                     <Route path="/paper-trading" element={<PaperTrading />} />
                     <Route path="/real-trading" element={<RealTrading />} />
+                    <Route path="/tax-documents" element={<TaxDocuments />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Router>

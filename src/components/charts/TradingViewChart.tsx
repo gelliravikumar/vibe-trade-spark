@@ -157,7 +157,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
   };
 
   return (
-    <div className={`relative ${isFullscreen ? 'fixed inset-0 z-50 bg-background flex flex-col' : ''}`}>
+    <div className={isFullscreen ? 'fixed inset-0 z-50 bg-background flex flex-col' : 'relative'}>
       {/* Chart Header with Controls */}
       <div className={`flex items-center justify-between ${isFullscreen ? 'p-4 border-b' : 'mb-2'}`}>
         <div className="flex items-center gap-2">
