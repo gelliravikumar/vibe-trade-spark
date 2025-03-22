@@ -1,616 +1,1019 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from 'sonner';
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle,
+  CardDescription,
+  CardFooter
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useToast } from "@/components/ui/use-toast";
+import { DataSourceSelector } from "@/components/ui/DataSourceSelector"; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { 
-  User, Bell, CreditCard, Shield, KeyRound, MonitorSmartphone, 
-  PaintBucket, FileText, Database, Terminal 
+  Settings as SettingsIcon,
+  User,
+  Lock,
+  CreditCard,
+  Bell,
+  Database,
+  LineChart,
+  Globe,
+  PaintBucket,
+  Sun,
+  Moon,
+  Monitor,
+  Key,
+  Share2,
+  AlertCircle,
+  Activity,
+  Trash2,
+  Code
 } from 'lucide-react';
-import { useData } from '@/context/DataContext';
-import { ApiProvider, ConnectionMethod } from '@/data/api';
+import { usePortfolio } from '@/hooks/use-portfolio';
+import { usePaperTrading } from '@/hooks/use-paper-trading';
+import { useTheme } from 'next-themes';
 
 const Settings = () => {
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("profile");
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('tradingApp_theme') || 'system';
-  });
-  const [accentColor, setAccentColor] = useState(() => {
-    return localStorage.getItem('tradingApp_accentColor') || 'blue';
-  });
+  const { setTheme, theme } = useTheme();
+
+  // State for active tab
+  const [activeTab, setActiveTab] = useState("account");
   
-  const { 
-    apiProvider, 
-    connectionMethod, 
-    useDummyData, 
-    connectionStatus,
-    setApiProvider, 
-    setConnectionMethod, 
-    setUseDummyData, 
-    refreshData 
-  } = useData();
-
-  const handleSaveSettings = () => {
-    localStorage.setItem('tradingApp_theme', theme);
-    localStorage.setItem('tradingApp_accentColor', accentColor);
+  // Account settings
+  const [name, setName] = useState("Paisa Raja");
+  const [email, setEmail] = useState("paisa.raja@example.com");
+  const [phone, setPhone] = useState("+91 9876543210");
+  
+  // Trade settings
+  const [defaultOrder, setDefaultOrder] = useState("market");
+  const [confirmOrders, setConfirmOrders] = useState(true);
+  const [showAvgPrice, setShowAvgPrice] = useState(true);
+  const [defaultQty, setDefaultQty] = useState("1");
+  
+  // Notification settings
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [priceAlerts, setPriceAlerts] = useState(true);
+  const [newsAlerts, setNewsAlerts] = useState(true);
+  const [tradingAlerts, setTradingAlerts] = useState(true);
+  
+  // Data settings
+  const [dataProvider, setDataProvider] = useState("alphavantage");
+  const [refreshInterval, setRefreshInterval] = useState(5);
+  const [connectionType, setConnectionType] = useState("websocket");
+  const [useDummyData, setUseDummyData] = useState(true);
+  
+  // Trading mode
+  const { isPaperTrading, setIsPaperTrading, paperBalance, addFunds, resetAccount } = usePaperTrading();
+  const [fundAmount, setFundAmount] = useState('10000');
+  
+  // Settings are persisted in localStorage
+  useEffect(() => {
+    try {
+      // Load settings from localStorage
+      const settings = {
+        name: localStorage.getItem('tradingApp_name') || "Paisa Raja",
+        email: localStorage.getItem('tradingApp_email') || "paisa.raja@example.com",
+        phone: localStorage.getItem('tradingApp_phone') || "+91 9876543210",
+        defaultOrder: localStorage.getItem('tradingApp_defaultOrder') || "market",
+        confirmOrders: localStorage.getItem('tradingApp_confirmOrders') === "true",
+        showAvgPrice: localStorage.getItem('tradingApp_showAvgPrice') === "true",
+        defaultQty: localStorage.getItem('tradingApp_defaultQty') || "1",
+        emailNotifications: localStorage.getItem('tradingApp_emailNotifications') === "true",
+        priceAlerts: localStorage.getItem('tradingApp_priceAlerts') === "true",
+        newsAlerts: localStorage.getItem('tradingApp_newsAlerts') === "true",
+        tradingAlerts: localStorage.getItem('tradingApp_tradingAlerts') === "true",
+        dataProvider: localStorage.getItem('tradingApp_dataProvider') || "alphavantage",
+        refreshInterval: parseInt(localStorage.getItem('tradingApp_refreshInterval') || "5"),
+        connectionType: localStorage.getItem('tradingApp_connectionType') || "websocket",
+        useDummyData: localStorage.getItem('tradingApp_useDummyData') === "true",
+      };
+      
+      // Set state with loaded settings
+      setName(settings.name);
+      setEmail(settings.email);
+      setPhone(settings.phone);
+      setDefaultOrder(settings.defaultOrder);
+      setConfirmOrders(settings.confirmOrders);
+      setShowAvgPrice(settings.showAvgPrice);
+      setDefaultQty(settings.defaultQty);
+      setEmailNotifications(settings.emailNotifications);
+      setPriceAlerts(settings.priceAlerts);
+      setNewsAlerts(settings.newsAlerts);
+      setTradingAlerts(settings.tradingAlerts);
+      setDataProvider(settings.dataProvider);
+      setRefreshInterval(settings.refreshInterval);
+      setConnectionType(settings.connectionType);
+      setUseDummyData(settings.useDummyData);
+      
+      // Check for URL parameters for active tab
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      if (tabParam) {
+        setActiveTab(tabParam);
+      }
+      
+    } catch (error) {
+      console.error("Error loading settings:", error);
+    }
+  }, []);
+  
+  // Save settings to localStorage
+  const saveSettings = () => {
+    try {
+      // Save all settings to localStorage
+      localStorage.setItem('tradingApp_name', name);
+      localStorage.setItem('tradingApp_email', email);
+      localStorage.setItem('tradingApp_phone', phone);
+      localStorage.setItem('tradingApp_defaultOrder', defaultOrder);
+      localStorage.setItem('tradingApp_confirmOrders', confirmOrders.toString());
+      localStorage.setItem('tradingApp_showAvgPrice', showAvgPrice.toString());
+      localStorage.setItem('tradingApp_defaultQty', defaultQty);
+      localStorage.setItem('tradingApp_emailNotifications', emailNotifications.toString());
+      localStorage.setItem('tradingApp_priceAlerts', priceAlerts.toString());
+      localStorage.setItem('tradingApp_newsAlerts', newsAlerts.toString());
+      localStorage.setItem('tradingApp_tradingAlerts', tradingAlerts.toString());
+      localStorage.setItem('tradingApp_dataProvider', dataProvider);
+      localStorage.setItem('tradingApp_refreshInterval', refreshInterval.toString());
+      localStorage.setItem('tradingApp_connectionType', connectionType);
+      localStorage.setItem('tradingApp_useDummyData', useDummyData.toString());
+      
+      toast.success("Settings saved successfully!");
+      
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast.error("Failed to save settings. Please try again.");
+    }
+  };
+  
+  const handleAddFunds = () => {
+    const amount = parseFloat(fundAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
     
-    document.documentElement.setAttribute('data-theme', theme === 'system' ? 
-      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : 
-      theme
-    );
-    
-    document.documentElement.className = document.documentElement.className
-      .replace(/accent-(blue|purple|green|orange|pink)/g, '')
-      .trim();
-    document.documentElement.classList.add(`accent-${accentColor}`);
-    
-    toast({
-      title: "Settings saved",
-      description: "Your preferences have been updated.",
-    });
+    addFunds(amount);
+    toast.success(`₹${amount.toLocaleString()} added to your paper trading account`);
+    setFundAmount('10000');
   };
-
-  const handleApiProviderChange = (value: string) => {
-    setApiProvider(value as ApiProvider);
-    localStorage.setItem('tradingApp_apiProvider', value);
+  
+  const handleResetAccount = () => {
+    if (window.confirm("Are you sure you want to reset your paper trading account? This will reset your balance to ₹10,000 and remove all positions.")) {
+      resetAccount();
+    }
   };
-
-  const handleConnectionMethodChange = (value: string) => {
-    setConnectionMethod(value as ConnectionMethod);
-    localStorage.setItem('tradingApp_connectionMethod', value);
-  };
-
-  const handleUseDummyDataChange = (checked: boolean) => {
-    setUseDummyData(checked);
-    localStorage.setItem('tradingApp_useDummyData', String(checked));
-  };
-
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    const url = new URL(window.location.href);
-    url.searchParams.set('tab', value);
-    window.history.pushState({}, '', url);
-  };
-
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="flex-grow container py-8">
-        <div className="flex flex-col md:flex-row gap-8">
-          <aside className="md:w-64">
-            <Card>
-              <CardContent className="p-4">
-                <Tabs 
-                  value={activeTab} 
-                  onValueChange={handleTabChange}
-                  className="w-full"
-                >
-                  <TabsList className="flex flex-col h-auto items-stretch gap-1">
-                    <TabsTrigger value="profile" className="justify-start">
-                      <User className="w-4 h-4 mr-2" />
-                      Profile
-                    </TabsTrigger>
-                    <TabsTrigger value="notifications" className="justify-start">
-                      <Bell className="w-4 h-4 mr-2" />
-                      Notifications
-                    </TabsTrigger>
-                    <TabsTrigger value="payment" className="justify-start">
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Payment
-                    </TabsTrigger>
-                    <TabsTrigger value="security" className="justify-start">
-                      <Shield className="w-4 h-4 mr-2" />
-                      Security
-                    </TabsTrigger>
-                    <TabsTrigger value="api" className="justify-start">
-                      <KeyRound className="w-4 h-4 mr-2" />
-                      API Keys
-                    </TabsTrigger>
-                    <TabsTrigger value="appearance" className="justify-start">
-                      <PaintBucket className="w-4 h-4 mr-2" />
-                      Appearance
-                    </TabsTrigger>
-                    <TabsTrigger value="devices" className="justify-start">
-                      <MonitorSmartphone className="w-4 h-4 mr-2" />
-                      Devices
-                    </TabsTrigger>
-                    <TabsTrigger value="data" className="justify-start">
-                      <Database className="w-4 h-4 mr-2" />
-                      Data Settings
-                    </TabsTrigger>
-                    <TabsTrigger value="dev" className="justify-start">
-                      <Terminal className="w-4 h-4 mr-2" />
-                      Developer
-                    </TabsTrigger>
-                  </TabsList>
-                
-                  <div className="flex-1 space-y-6 mt-8 hidden md:block">
-                    <TabsContent value="profile">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Profile</CardTitle>
-                          <CardDescription>
-                            Manage your personal information and profile settings.
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="name">Name</Label>
-                              <Input id="name" defaultValue="Aarav Sharma" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="email">Email</Label>
-                              <Input id="email" type="email" defaultValue="aarav.sharma@example.com" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="phone">Phone Number</Label>
-                              <Input id="phone" type="tel" defaultValue="+91 98765 43210" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="dob">Date of Birth</Label>
-                              <Input id="dob" type="date" defaultValue="1990-01-01" />
-                            </div>
+      
+      <main className="flex-grow py-16">
+        <div className="container">
+          <div className="mx-auto max-w-6xl">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="md:w-1/4">
+                <Card className="sticky top-20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <SettingsIcon className="h-5 w-5" />
+                      <span>Settings</span>
+                    </CardTitle>
+                  </CardHeader>
+                  
+                  <div className="px-2 pb-4">
+                    <Tabs 
+                      defaultValue={activeTab} 
+                      value={activeTab} 
+                      onValueChange={setActiveTab} 
+                      orientation="vertical" 
+                      className="w-full"
+                    >
+                      <TabsList className="flex flex-col h-auto bg-transparent space-y-1 p-0">
+                        <TabsTrigger 
+                          value="account" 
+                          className="w-full justify-start px-3 py-2 text-left data-[state=active]:bg-muted"
+                        >
+                          <User className="h-4 w-4 mr-2" />
+                          <span>Account</span>
+                        </TabsTrigger>
+                        
+                        <TabsTrigger 
+                          value="security" 
+                          className="w-full justify-start px-3 py-2 text-left data-[state=active]:bg-muted"
+                        >
+                          <Lock className="h-4 w-4 mr-2" />
+                          <span>Security</span>
+                        </TabsTrigger>
+                        
+                        <TabsTrigger 
+                          value="payment" 
+                          className="w-full justify-start px-3 py-2 text-left data-[state=active]:bg-muted"
+                        >
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          <span>Payment Methods</span>
+                        </TabsTrigger>
+                        
+                        <TabsTrigger 
+                          value="trade" 
+                          className="w-full justify-start px-3 py-2 text-left data-[state=active]:bg-muted"
+                        >
+                          <LineChart className="h-4 w-4 mr-2" />
+                          <span>Trading Preferences</span>
+                        </TabsTrigger>
+                        
+                        <TabsTrigger 
+                          value="notification" 
+                          className="w-full justify-start px-3 py-2 text-left data-[state=active]:bg-muted"
+                        >
+                          <Bell className="h-4 w-4 mr-2" />
+                          <span>Notifications</span>
+                        </TabsTrigger>
+                        
+                        <TabsTrigger 
+                          value="data" 
+                          className="w-full justify-start px-3 py-2 text-left data-[state=active]:bg-muted"
+                        >
+                          <Database className="h-4 w-4 mr-2" />
+                          <span>Data Sources</span>
+                        </TabsTrigger>
+                        
+                        <TabsTrigger 
+                          value="appearance" 
+                          className="w-full justify-start px-3 py-2 text-left data-[state=active]:bg-muted"
+                        >
+                          <PaintBucket className="h-4 w-4 mr-2" />
+                          <span>Appearance</span>
+                        </TabsTrigger>
+                        
+                        <TabsTrigger 
+                          value="api" 
+                          className="w-full justify-start px-3 py-2 text-left data-[state=active]:bg-muted"
+                        >
+                          <Key className="h-4 w-4 mr-2" />
+                          <span>API Access</span>
+                        </TabsTrigger>
+                        
+                        <TabsTrigger 
+                          value="advanced" 
+                          className="w-full justify-start px-3 py-2 text-left data-[state=active]:bg-muted"
+                        >
+                          <Code className="h-4 w-4 mr-2" />
+                          <span>Advanced</span>
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+                </Card>
+              </div>
+              
+              <div className="md:w-3/4">
+                <Card>
+                  <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsContent value="account" className="space-y-6 p-6">
+                      <div>
+                        <h2 className="text-2xl font-semibold tracking-tight">Account Settings</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Manage your account settings and preferences.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="name">Full Name</Label>
+                            <Input 
+                              id="name" 
+                              value={name} 
+                              onChange={(e) => setName(e.target.value)} 
+                              placeholder="Your full name" 
+                            />
                           </div>
                           
                           <div className="space-y-2">
-                            <Label htmlFor="address">Address</Label>
-                            <Input id="address" defaultValue="123 Main St, Mumbai, Maharashtra" />
-                          </div>
-                          
-                          <div className="flex justify-end">
-                            <Button>Save Profile</Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    <TabsContent value="notifications">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Notifications</CardTitle>
-                          <CardDescription>
-                            Manage how you receive notifications and alerts.
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <Label htmlFor="price-alerts">Price Alerts</Label>
-                                <p className="text-sm text-muted-foreground">
-                                  Receive alerts when stocks hit your price targets
-                                </p>
-                              </div>
-                              <Switch id="price-alerts" defaultChecked />
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <Label htmlFor="market-updates">Market Updates</Label>
-                                <p className="text-sm text-muted-foreground">
-                                  Daily market opening and closing updates
-                                </p>
-                              </div>
-                              <Switch id="market-updates" defaultChecked />
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <Label htmlFor="trade-notifications">Trade Notifications</Label>
-                                <p className="text-sm text-muted-foreground">
-                                  Get notified when your trades are executed
-                                </p>
-                              </div>
-                              <Switch id="trade-notifications" defaultChecked />
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <Label htmlFor="news-alerts">News Alerts</Label>
-                                <p className="text-sm text-muted-foreground">
-                                  Breaking news about companies in your portfolio
-                                </p>
-                              </div>
-                              <Switch id="news-alerts" defaultChecked />
-                            </div>
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input 
+                              id="email" 
+                              type="email" 
+                              value={email} 
+                              onChange={(e) => setEmail(e.target.value)} 
+                              placeholder="Your email address" 
+                            />
                           </div>
                           
                           <div className="space-y-2">
-                            <Label>Notification Method</Label>
-                            <RadioGroup defaultValue="all">
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="all" id="all" />
-                                <Label htmlFor="all">All methods (Email, SMS, Push)</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="email" id="email" />
-                                <Label htmlFor="email">Email only</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="push" id="push" />
-                                <Label htmlFor="push">Push notifications only</Label>
-                              </div>
-                            </RadioGroup>
+                            <Label htmlFor="phone">Phone Number</Label>
+                            <Input 
+                              id="phone" 
+                              value={phone} 
+                              onChange={(e) => setPhone(e.target.value)} 
+                              placeholder="Your phone number" 
+                            />
                           </div>
-                          
-                          <div className="flex justify-end">
-                            <Button>Save Preferences</Button>
-                          </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end">
+                        <Button onClick={saveSettings}>Save Changes</Button>
+                      </div>
                     </TabsContent>
                     
-                    <TabsContent value="data">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Data Settings</CardTitle>
-                          <CardDescription>
-                            Configure your data sources and connection preferences.
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                          <div className="flex flex-col gap-4">
-                            <div className="flex justify-between items-center p-4 rounded-md border">
-                              <div>
-                                <Label htmlFor="use-dummy-data" className="text-base font-medium">Use Demo Data</Label>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  Use demo data for testing and exploration purposes. 
-                                  Turn this off to connect to real market data sources.
+                    <TabsContent value="security" className="space-y-6 p-6">
+                      <div>
+                        <h2 className="text-2xl font-semibold tracking-tight">Security Settings</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Manage your security settings and authentication methods.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Change Password</CardTitle>
+                            <CardDescription>
+                              Update your password to maintain account security.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="current-password">Current Password</Label>
+                              <Input id="current-password" type="password" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="new-password">New Password</Label>
+                              <Input id="new-password" type="password" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="confirm-password">Confirm New Password</Label>
+                              <Input id="confirm-password" type="password" />
+                            </div>
+                          </CardContent>
+                          <CardFooter>
+                            <Button>Update Password</Button>
+                          </CardFooter>
+                        </Card>
+                        
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Two-Factor Authentication</CardTitle>
+                            <CardDescription>
+                              Add an extra layer of security to your account.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>SMS Authentication</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Receive verification codes via text message.
                                 </p>
                               </div>
-                              <Switch
-                                id="use-dummy-data"
-                                checked={useDummyData}
-                                onCheckedChange={handleUseDummyDataChange}
+                              <Switch checked={true} />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>Authenticator App</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Use an authenticator app for verification codes.
+                                </p>
+                              </div>
+                              <Switch />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="payment" className="space-y-6 p-6">
+                      <div>
+                        <h2 className="text-2xl font-semibold tracking-tight">Payment Methods</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Manage your payment methods and funds transfer options.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Bank Accounts</CardTitle>
+                            <CardDescription>
+                              Manage connected bank accounts for deposits and withdrawals.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="p-4 border rounded-lg">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="font-medium">HDFC Bank</div>
+                                <Badge>Primary</Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                Account ending in ****6789
+                              </p>
+                            </div>
+                          </CardContent>
+                          <CardFooter>
+                            <Button variant="outline">+ Add New Bank Account</Button>
+                          </CardFooter>
+                        </Card>
+                        
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>UPI IDs</CardTitle>
+                            <CardDescription>
+                              Manage UPI IDs for instant deposits and withdrawals.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="p-4 border rounded-lg">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="font-medium">paisa.raja@upi</div>
+                                <Badge>Verified</Badge>
+                              </div>
+                            </div>
+                          </CardContent>
+                          <CardFooter>
+                            <Button variant="outline">+ Add New UPI ID</Button>
+                          </CardFooter>
+                        </Card>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="trade" className="space-y-6 p-6">
+                      <div>
+                        <h2 className="text-2xl font-semibold tracking-tight">Trading Preferences</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Configure how you trade and view market data.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Trading Mode</CardTitle>
+                            <CardDescription>
+                              Choose between paper trading and real trading.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>Paper Trading Mode</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Practice with virtual money, no real funds used.
+                                </p>
+                              </div>
+                              <Switch 
+                                checked={isPaperTrading} 
+                                onCheckedChange={setIsPaperTrading} 
                               />
                             </div>
                             
-                            <div className="grid md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="api-provider">Data Provider</Label>
-                                <Select
-                                  disabled={useDummyData}
-                                  value={apiProvider}
-                                  onValueChange={handleApiProviderChange}
+                            {isPaperTrading && (
+                              <div className="rounded-lg bg-secondary p-4 space-y-4">
+                                <div className="flex justify-between items-center">
+                                  <span>Current Paper Balance:</span>
+                                  <span className="font-bold">₹{paperBalance.toLocaleString('en-IN')}</span>
+                                </div>
+                                
+                                <div className="flex gap-2">
+                                  <Input 
+                                    type="number" 
+                                    value={fundAmount} 
+                                    onChange={(e) => setFundAmount(e.target.value)}
+                                    placeholder="Amount" 
+                                  />
+                                  <Button onClick={handleAddFunds}>Add Funds</Button>
+                                </div>
+                                
+                                <Button 
+                                  variant="destructive" 
+                                  onClick={handleResetAccount}
                                 >
-                                  <SelectTrigger id="api-provider" className="w-full">
-                                    <SelectValue placeholder="Select Data Provider" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="NSE">NSE India</SelectItem>
-                                    <SelectItem value="BSE">BSE India</SelectItem>
-                                    <SelectItem value="BINANCE">Binance (Crypto)</SelectItem>
-                                    <SelectItem value="COINGECKO">CoinGecko (Crypto)</SelectItem>
-                                    <SelectItem value="COINBASE">Coinbase (Crypto)</SelectItem>
-                                    <SelectItem value="DUMMY">Demo Data</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Select your preferred market data provider
-                                </p>
+                                  Reset Account
+                                </Button>
                               </div>
-                              
-                              <div className="space-y-2">
-                                <Label htmlFor="connection-method">Connection Method</Label>
-                                <Select
-                                  disabled={useDummyData}
-                                  value={connectionMethod}
-                                  onValueChange={handleConnectionMethodChange}
-                                >
-                                  <SelectTrigger id="connection-method" className="w-full">
-                                    <SelectValue placeholder="Select Connection Method" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="REST">REST API (Polling)</SelectItem>
-                                    <SelectItem value="WEBSOCKET">WebSocket (Real-time)</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  WebSockets provide real-time data but may require better network conditions
-                                </p>
-                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                        
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Order Defaults</CardTitle>
+                            <CardDescription>
+                              Set default order settings for faster trading.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="default-order">Default Order Type</Label>
+                              <Select 
+                                value={defaultOrder} 
+                                onValueChange={setDefaultOrder}
+                              >
+                                <SelectTrigger id="default-order">
+                                  <SelectValue placeholder="Select default order type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="market">Market</SelectItem>
+                                  <SelectItem value="limit">Limit</SelectItem>
+                                  <SelectItem value="stop">Stop</SelectItem>
+                                  <SelectItem value="stop-limit">Stop Limit</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
                             
-                            <div className="p-4 rounded-md border">
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <h3 className="text-base font-medium">Connection Status</h3>
-                                  <p className="text-sm text-muted-foreground">
-                                    Current status of your data connection
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className={`inline-block w-3 h-3 rounded-full ${
-                                    connectionStatus.status === 'connected' ? 'bg-success' : 
-                                    connectionStatus.status === 'connecting' ? 'bg-warning' : 'bg-destructive'
-                                  }`}></span>
-                                  <span className="text-sm capitalize">{connectionStatus.status}</span>
-                                </div>
-                              </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="default-qty">Default Quantity</Label>
+                              <Input 
+                                id="default-qty" 
+                                type="number" 
+                                value={defaultQty} 
+                                onChange={(e) => setDefaultQty(e.target.value)} 
+                                min="1" 
+                                step="1" 
+                              />
                             </div>
                             
-                            <div className="flex justify-end">
-                              <Button variant="outline" className="mr-2" onClick={() => refreshData()}>
-                                Refresh Data
-                              </Button>
-                              <Button onClick={() => toast({ title: "Settings saved", description: "Data settings have been updated" })}>
-                                Save Settings
-                              </Button>
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>Confirm Orders</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Show confirmation dialog before placing orders.
+                                </p>
+                              </div>
+                              <Switch 
+                                checked={confirmOrders} 
+                                onCheckedChange={setConfirmOrders} 
+                              />
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>Show Average Price</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Display average purchase price in portfolio.
+                                </p>
+                              </div>
+                              <Switch 
+                                checked={showAvgPrice} 
+                                onCheckedChange={setShowAvgPrice} 
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      
+                      <div className="flex justify-end">
+                        <Button onClick={saveSettings}>Save Changes</Button>
+                      </div>
                     </TabsContent>
                     
-                    <TabsContent value="appearance">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Appearance</CardTitle>
-                          <CardDescription>
-                            Customize the look and feel of your trading interface.
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                          <div className="space-y-4">
-                            <Label>Theme</Label>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                              <div 
-                                className={`cursor-pointer rounded-md border p-4 transition-all ${theme === 'light' ? 'ring-2 ring-primary' : ''}`}
+                    <TabsContent value="notification" className="space-y-6 p-6">
+                      <div>
+                        <h2 className="text-2xl font-semibold tracking-tight">Notification Settings</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Manage how and when you receive notifications.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Communication Channels</CardTitle>
+                            <CardDescription>
+                              Choose how you want to receive notifications.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>Email Notifications</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Receive notifications via email.
+                                </p>
+                              </div>
+                              <Switch 
+                                checked={emailNotifications} 
+                                onCheckedChange={setEmailNotifications} 
+                              />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>SMS Notifications</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Receive notifications via SMS.
+                                </p>
+                              </div>
+                              <Switch />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>Push Notifications</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Receive notifications on your devices.
+                                </p>
+                              </div>
+                              <Switch />
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Notification Types</CardTitle>
+                            <CardDescription>
+                              Choose what types of notifications you want to receive.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>Price Alerts</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Alert when price reaches your targets.
+                                </p>
+                              </div>
+                              <Switch 
+                                checked={priceAlerts} 
+                                onCheckedChange={setPriceAlerts} 
+                              />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>News Alerts</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Alert for news related to your watchlist.
+                                </p>
+                              </div>
+                              <Switch 
+                                checked={newsAlerts} 
+                                onCheckedChange={setNewsAlerts} 
+                              />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>Trading Alerts</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Alert for order executions and cancellations.
+                                </p>
+                              </div>
+                              <Switch 
+                                checked={tradingAlerts} 
+                                onCheckedChange={setTradingAlerts} 
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      
+                      <div className="flex justify-end">
+                        <Button onClick={saveSettings}>Save Changes</Button>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="data" className="space-y-6 p-6">
+                      <div>
+                        <h2 className="text-2xl font-semibold tracking-tight">Data Source Settings</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Configure your market data sources and connection preferences.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Market Data</CardTitle>
+                            <CardDescription>
+                              Select your preferred market data provider.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <DataSourceSelector 
+                              value={dataProvider} 
+                              onChange={setDataProvider} 
+                            />
+                            
+                            <div className="space-y-2">
+                              <Label>Data Refresh Interval (seconds)</Label>
+                              <div className="flex items-center space-x-2">
+                                <Slider
+                                  value={[refreshInterval]}
+                                  min={1}
+                                  max={60}
+                                  step={1}
+                                  onValueChange={(values) => setRefreshInterval(values[0])}
+                                  className="flex-1"
+                                />
+                                <span className="w-12 text-center">{refreshInterval}s</span>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="connection-type">Connection Method</Label>
+                              <Select 
+                                value={connectionType} 
+                                onValueChange={setConnectionType}
+                              >
+                                <SelectTrigger id="connection-type">
+                                  <SelectValue placeholder="Select connection method" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="websocket">WebSocket (Real-time)</SelectItem>
+                                  <SelectItem value="rest">REST API (Polling)</SelectItem>
+                                  <SelectItem value="combination">Combined (WebSocket + REST)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>Use Dummy Data</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Use sample data instead of real market data.
+                                </p>
+                              </div>
+                              <Switch 
+                                checked={useDummyData} 
+                                onCheckedChange={setUseDummyData} 
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      
+                      <div className="flex justify-end">
+                        <Button onClick={saveSettings}>Save Changes</Button>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="appearance" className="space-y-6 p-6">
+                      <div>
+                        <h2 className="text-2xl font-semibold tracking-tight">Appearance Settings</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Customize the look and feel of the application.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Theme</CardTitle>
+                            <CardDescription>
+                              Choose your preferred color theme.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-3 gap-4">
+                              <Button 
+                                variant="outline" 
+                                className={`flex flex-col items-center justify-center h-24 ${theme === 'light' ? 'border-primary' : ''}`} 
                                 onClick={() => setTheme('light')}
                               >
-                                <div className="w-full h-24 rounded bg-white border mb-2"></div>
-                                <p className="text-center font-medium">Light</p>
-                              </div>
-                              <div 
-                                className={`cursor-pointer rounded-md border p-4 transition-all ${theme === 'dark' ? 'ring-2 ring-primary' : ''}`}
+                                <Sun className="h-10 w-10 mb-2" />
+                                <span>Light</span>
+                              </Button>
+                              
+                              <Button 
+                                variant="outline" 
+                                className={`flex flex-col items-center justify-center h-24 ${theme === 'dark' ? 'border-primary' : ''}`} 
                                 onClick={() => setTheme('dark')}
                               >
-                                <div className="w-full h-24 rounded bg-slate-900 border mb-2"></div>
-                                <p className="text-center font-medium">Dark</p>
-                              </div>
-                              <div 
-                                className={`cursor-pointer rounded-md border p-4 transition-all ${theme === 'system' ? 'ring-2 ring-primary' : ''}`}
+                                <Moon className="h-10 w-10 mb-2" />
+                                <span>Dark</span>
+                              </Button>
+                              
+                              <Button 
+                                variant="outline" 
+                                className={`flex flex-col items-center justify-center h-24 ${theme === 'system' ? 'border-primary' : ''}`} 
                                 onClick={() => setTheme('system')}
                               >
-                                <div className="w-full h-24 rounded bg-gradient-to-r from-white to-slate-900 border mb-2"></div>
-                                <p className="text-center font-medium">System Default</p>
-                              </div>
+                                <Monitor className="h-10 w-10 mb-2" />
+                                <span>System</span>
+                              </Button>
                             </div>
-                          </div>
-                          
-                          <div className="space-y-4">
-                            <Label>Accent Color</Label>
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                              {[
-                                { id: 'blue', color: '#3b82f6', name: 'Blue' },
-                                { id: 'purple', color: '#8b5cf6', name: 'Purple' },
-                                { id: 'green', color: '#10b981', name: 'Green' },
-                                { id: 'orange', color: '#f97316', name: 'Orange' },
-                                { id: 'pink', color: '#ec4899', name: 'Pink' },
-                              ].map((color) => (
-                                <div 
-                                  key={color.id}
-                                  className={`cursor-pointer rounded-md border p-4 transition-all ${accentColor === color.id ? 'ring-2 ring-primary' : ''}`}
-                                  onClick={() => setAccentColor(color.id)}
-                                >
-                                  <div 
-                                    className="w-full h-12 rounded mb-2" 
-                                    style={{ backgroundColor: color.color }}
-                                  ></div>
-                                  <p className="text-center font-medium">{color.name}</p>
-                                </div>
-                              ))}
+                          </CardContent>
+                        </Card>
+                        
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Region & Language</CardTitle>
+                            <CardDescription>
+                              Set your regional and language preferences.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="currency">Currency Display</Label>
+                              <Select defaultValue="INR">
+                                <SelectTrigger id="currency">
+                                  <SelectValue placeholder="Select currency" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="INR">₹ Indian Rupee (INR)</SelectItem>
+                                  <SelectItem value="USD">$ US Dollar (USD)</SelectItem>
+                                  <SelectItem value="EUR">€ Euro (EUR)</SelectItem>
+                                  <SelectItem value="GBP">£ British Pound (GBP)</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
-                          </div>
-                          
-                          <div className="space-y-4">
-                            <Label>Layout Density</Label>
-                            <RadioGroup defaultValue="comfortable">
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="compact" id="compact" />
-                                <Label htmlFor="compact">Compact</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="comfortable" id="comfortable" />
-                                <Label htmlFor="comfortable">Comfortable</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="spacious" id="spacious" />
-                                <Label htmlFor="spacious">Spacious</Label>
-                              </div>
-                            </RadioGroup>
-                          </div>
-                          
-                          <div className="space-y-4">
-                            <Label>Chart Default Style</Label>
-                            <RadioGroup defaultValue="candles">
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="candles" id="candles" />
-                                <Label htmlFor="candles">Candlestick</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="line" id="line" />
-                                <Label htmlFor="line">Line Chart</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="area" id="area" />
-                                <Label htmlFor="area">Area Chart</Label>
-                              </div>
-                            </RadioGroup>
-                          </div>
-                          
-                          <div className="flex justify-end">
-                            <Button onClick={handleSaveSettings}>Save Appearance</Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-
-                    {/* Other tab contents can be added here */}
-                    <TabsContent value="payment">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Payment Methods</CardTitle>
-                          <CardDescription>Manage your payment methods and billing</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <p>Payment content goes here</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-
-                    <TabsContent value="security">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Security Settings</CardTitle>
-                          <CardDescription>Manage your account security</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <p>Security content goes here</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-
-                    <TabsContent value="api">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>API Keys</CardTitle>
-                          <CardDescription>Manage your API access</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <p>API keys content goes here</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-
-                    <TabsContent value="devices">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Connected Devices</CardTitle>
-                          <CardDescription>Manage your devices</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <p>Devices content goes here</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-
-                    <TabsContent value="dev">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Developer Settings</CardTitle>
-                          <CardDescription>Advanced configuration options</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <p>Developer settings content goes here</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                  </div>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </aside>
-          
-          <div className="flex-1 space-y-6 md:hidden">
-            <Tabs value={activeTab}>
-              <TabsContent value="profile">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Profile</CardTitle>
-                    <CardDescription>
-                      Manage your personal information and profile settings.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Mobile profile content - same as desktop */}
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="mobile-name">Name</Label>
-                        <Input id="mobile-name" defaultValue="Aarav Sharma" />
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="language">Language</Label>
+                              <Select defaultValue="en-IN">
+                                <SelectTrigger id="language">
+                                  <SelectValue placeholder="Select language" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="en-IN">English (India)</SelectItem>
+                                  <SelectItem value="hi-IN">Hindi</SelectItem>
+                                  <SelectItem value="ta-IN">Tamil</SelectItem>
+                                  <SelectItem value="te-IN">Telugu</SelectItem>
+                                  <SelectItem value="bn-IN">Bengali</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </CardContent>
+                        </Card>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="mobile-email">Email</Label>
-                        <Input id="mobile-email" type="email" defaultValue="aarav.sharma@example.com" />
+                    </TabsContent>
+                    
+                    <TabsContent value="api" className="space-y-6 p-6">
+                      <div>
+                        <h2 className="text-2xl font-semibold tracking-tight">API Access</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Manage API access for third-party applications and services.
+                        </p>
                       </div>
-                      {/* Other profile fields */}
-                    </div>
-                    <div className="flex justify-end">
-                      <Button>Save Profile</Button>
-                    </div>
-                  </CardContent>
+                      
+                      <div className="space-y-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>API Keys</CardTitle>
+                            <CardDescription>
+                              Generate and manage API keys for external applications.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="p-4 border rounded-lg">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="font-medium">Primary API Key</div>
+                                <Badge variant="secondary">Active</Badge>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Input 
+                                  value="••••••••••••••••••••••••••••••" 
+                                  readOnly 
+                                  className="font-mono text-sm"
+                                />
+                                <Button size="sm" variant="outline">
+                                  <Share2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-2">
+                                Created on: Aug 15, 2023 • Last used: 2 days ago
+                              </p>
+                            </div>
+                          </CardContent>
+                          <CardFooter>
+                            <Button>Generate New API Key</Button>
+                          </CardFooter>
+                        </Card>
+                        
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Connected Applications</CardTitle>
+                            <CardDescription>
+                              Manage third-party applications with access to your account.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-center py-6">
+                              <p className="text-muted-foreground">No applications connected yet.</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="advanced" className="space-y-6 p-6">
+                      <div>
+                        <h2 className="text-2xl font-semibold tracking-tight">Advanced Settings</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Configure advanced application settings and options.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Performance</CardTitle>
+                            <CardDescription>
+                              Configure application performance settings.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>Enable Data Caching</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Cache market data to improve performance.
+                                </p>
+                              </div>
+                              <Switch defaultChecked />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <Label>High Performance Mode</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Use more resources for better performance.
+                                </p>
+                              </div>
+                              <Switch />
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card>
+                          <CardHeader className="text-destructive">
+                            <CardTitle className="flex items-center">
+                              <AlertCircle className="h-5 w-5 mr-2" />
+                              Danger Zone
+                            </CardTitle>
+                            <CardDescription>
+                              Irreversible actions that you should be careful with.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div>
+                              <h3 className="font-medium">Clear All Data</h3>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                This will clear all local data including saved watchlists and settings.
+                              </p>
+                              <Button variant="outline" size="sm">
+                                <Activity className="h-4 w-4 mr-2" />
+                                Clear Cached Data
+                              </Button>
+                            </div>
+                            
+                            <div>
+                              <h3 className="font-medium">Delete Account</h3>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                Permanently delete your account and all associated data.
+                              </p>
+                              <Button variant="destructive" size="sm">
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Account
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </Card>
-              </TabsContent>
-              
-              {/* Add mobile versions of other tab contents */}
-              <TabsContent value="notifications">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notifications</CardTitle>
-                    <CardDescription>Notification settings</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Mobile notification content */}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="data">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Data Settings</CardTitle>
-                    <CardDescription>Configure data sources</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Mobile data settings content */}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="appearance">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Appearance</CardTitle>
-                    <CardDescription>Customize your interface</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Mobile appearance content */}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              {/* Other mobile tab contents */}
-            </Tabs>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
+      
       <Footer />
     </div>
+  );
+};
+
+const Badge = ({ children, variant = "default" }: { children: React.ReactNode, variant?: string }) => {
+  const baseClasses = "px-2 py-0.5 text-xs font-medium rounded-full";
+  const variantClasses = {
+    default: "bg-primary text-primary-foreground",
+    secondary: "bg-secondary text-secondary-foreground",
+    outline: "border border-primary text-foreground"
+  };
+  
+  return (
+    <span className={`${baseClasses} ${variantClasses[variant as keyof typeof variantClasses]}`}>
+      {children}
+    </span>
   );
 };
 

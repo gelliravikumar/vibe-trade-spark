@@ -1,381 +1,487 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { PageLoader } from '@/components/common/Loader';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useData } from '@/context/DataContext';
 import { usePortfolio } from '@/hooks/use-portfolio';
 import { usePaperTrading } from '@/hooks/use-paper-trading';
-import { BarChart, TrendingUp, TrendingDown, Clock, Wallet, ArrowRight, LineChart } from 'lucide-react';
-import { AssetTable } from '@/components/markets/AssetTable';
+import { PortfolioSummary } from '@/components/portfolio/PortfolioSummary';
+import { TrendingUp, TrendingDown, ArrowRight, BarChart, PieChart, LineChart, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { MiniChart } from '@/components/charts/MiniChart';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Dashboard = () => {
-  const { isLoading, stocksData, cryptoData } = useData();
+  const { stocksData, cryptoData, isLoading, error } = useData();
   const { portfolio } = usePortfolio();
-  const { paperBalance, portfolioValue } = usePaperTrading();
-  const [activeTab, setActiveTab] = useState('overview');
-
-  // Calculate total portfolio value including both real and paper trading
-  const totalPortfolioValue = Object.values(portfolio).reduce((total, position) => {
-    const asset = [...stocksData, ...cryptoData].find(a => a.symbol === position.symbol);
-    if (asset) {
-      return total + (position.quantity * asset.price);
+  const { portfolioValue, paperBalance } = usePaperTrading();
+  
+  const [topGainersStocks, setTopGainersStocks] = useState<any[]>([]);
+  const [topLosersStocks, setTopLosersStocks] = useState<any[]>([]);
+  const [topGainersCrypto, setTopGainersCrypto] = useState<any[]>([]);
+  const [topLosersCrypto, setTopLosersCrypto] = useState<any[]>([]);
+  const [assetTypeFilter, setAssetTypeFilter] = useState<'all' | 'stocks' | 'crypto'>('all');
+  
+  // Calculate current portfolio value and get current prices
+  const getCurrentPrice = (symbol: string) => {
+    const asset = [...stocksData, ...cryptoData].find(item => item.symbol === symbol);
+    return asset ? asset.price : 0;
+  };
+  
+  // Filter portfolio based on asset type
+  const filteredPortfolio = () => {
+    if (assetTypeFilter === 'all') return portfolio;
+    
+    return Object.entries(portfolio).reduce((filtered, [symbol, position]) => {
+      if ((assetTypeFilter === 'stocks' && position.type === 'STOCK') || 
+          (assetTypeFilter === 'crypto' && position.type === 'CRYPTO')) {
+        filtered[symbol] = position;
+      }
+      return filtered;
+    }, {} as typeof portfolio);
+  };
+  
+  // Create separate functions to calculate filtered portfolio values
+  const calculateFilteredPortfolioValue = () => {
+    const filtered = filteredPortfolio();
+    return Object.values(filtered).reduce((total, position) => {
+      const currentPrice = getCurrentPrice(position.symbol);
+      return total + (position.quantity * currentPrice);
+    }, 0);
+  };
+  
+  useEffect(() => {
+    if (stocksData.length && cryptoData.length) {
+      // Sort stocks by percent change
+      const sortedStocks = [...stocksData].sort((a, b) => b.changePercent - a.changePercent);
+      setTopGainersStocks(sortedStocks.slice(0, 5));
+      setTopLosersStocks([...sortedStocks].reverse().slice(0, 5));
+      
+      // Sort crypto by percent change
+      const sortedCrypto = [...cryptoData].sort((a, b) => b.changePercent - a.changePercent);
+      setTopGainersCrypto(sortedCrypto.slice(0, 5));
+      setTopLosersCrypto([...sortedCrypto].reverse().slice(0, 5));
     }
-    return total + position.totalInvestment;
-  }, 0);
-
-  // Get top gaining and losing assets
-  const topGainers = [...stocksData, ...cryptoData]
-    .sort((a, b) => b.changePercent - a.changePercent)
-    .slice(0, 5);
-
-  const topLosers = [...stocksData, ...cryptoData]
-    .sort((a, b) => a.changePercent - b.changePercent)
-    .slice(0, 5);
-
-  // Get recently traded assets
-  const recentTrades = [
-    { id: 1, symbol: 'RELIANCE', name: 'Reliance Industries', type: 'BUY', price: 2563.45, quantity: 10, time: '09:45 AM', changePercent: 1.25 },
-    { id: 2, symbol: 'INFY', name: 'Infosys', type: 'SELL', price: 1874.20, quantity: 5, time: 'Yesterday', changePercent: -0.52 },
-    { id: 3, symbol: 'BTC', name: 'Bitcoin', type: 'BUY', price: 4853123.50, quantity: 0.05, time: '2 days ago', changePercent: 2.34 }
-  ];
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-grow">
-          <PageLoader />
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
+  }, [stocksData, cryptoData]);
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-grow pt-20 pb-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="glass-panel rounded-lg p-6 mb-8">
-            <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-6">
-              <div>
-                <h1 className="text-3xl font-bold mb-2 flex items-center">
-                  <LineChart className="h-8 w-8 mr-3 text-primary" />
-                  Dashboard
-                </h1>
-                <p className="text-muted-foreground max-w-2xl">
-                  Welcome back, Paisa Raja! Here's an overview of your investments, market trends, and recent activities.
-                </p>
-              </div>
-              <div className="flex space-x-2">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> 
-                  <span>Last Updated: Just Now</span>
-                </Button>
-                <Button>
-                  Refresh
-                </Button>
-              </div>
+      
+      <main className="flex-grow py-16">
+        <div className="container px-4 mx-auto max-w-7xl">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+              <p className="text-muted-foreground">
+                Overview of your portfolio and market trends
+              </p>
             </div>
-
-            <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-6">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-                <TabsTrigger value="watchlist">Watchlist</TabsTrigger>
-                <TabsTrigger value="activities">Activities</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">Total Portfolio Value</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">₹{totalPortfolioValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                      <div className="text-sm text-success flex items-center mt-1">
-                        <TrendingUp className="h-4 w-4 mr-1" /> +8.35% overall
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">Paper Trading Balance</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">₹{paperBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                      <div className="text-sm text-muted-foreground flex items-center mt-1">
-                        <Wallet className="h-4 w-4 mr-1" /> Available for paper trading
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">Paper Trading Portfolio</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">₹{portfolioValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                      <div className="text-sm text-success flex items-center mt-1">
-                        <TrendingUp className="h-4 w-4 mr-1" /> +3.21% overall
-                      </div>
-                    </CardContent>
-                  </Card>
+            
+            <div className="mt-4 md:mt-0 space-x-2">
+              <Select 
+                value={assetTypeFilter}
+                onValueChange={(value) => setAssetTypeFilter(value as 'all' | 'stocks' | 'crypto')}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Asset Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Assets</SelectItem>
+                  <SelectItem value="stocks">Stocks Only</SelectItem>
+                  <SelectItem value="crypto">Crypto Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total Portfolio Value
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  ₹{calculateFilteredPortfolioValue().toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                 </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Top Gainers</CardTitle>
-                      <CardDescription>Best performing assets today</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {topGainers.map(asset => (
-                          <Link 
-                            to={`/trade/${asset.symbol}`} 
-                            key={asset.symbol}
-                            className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-md transition-colors"
-                          >
-                            <div>
-                              <div className="font-medium">{asset.symbol}</div>
-                              <div className="text-sm text-muted-foreground">{asset.name}</div>
-                            </div>
-                            <div className="text-right">
-                              <div>₹{asset.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                              <div className="text-success flex items-center justify-end">
-                                <TrendingUp className="h-3 w-3 mr-1" /> 
-                                +{asset.changePercent.toFixed(2)}%
-                              </div>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Top Losers</CardTitle>
-                      <CardDescription>Worst performing assets today</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {topLosers.map(asset => (
-                          <Link 
-                            to={`/trade/${asset.symbol}`} 
-                            key={asset.symbol}
-                            className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-md transition-colors"
-                          >
-                            <div>
-                              <div className="font-medium">{asset.symbol}</div>
-                              <div className="text-sm text-muted-foreground">{asset.name}</div>
-                            </div>
-                            <div className="text-right">
-                              <div>₹{asset.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                              <div className="text-destructive flex items-center justify-end">
-                                <TrendingDown className="h-3 w-3 mr-1" /> 
-                                {asset.changePercent.toFixed(2)}%
-                              </div>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
+                <p className="text-xs text-muted-foreground">
+                  Including {assetTypeFilter === 'all' ? 'all assets' : assetTypeFilter === 'stocks' ? 'stocks only' : 'crypto only'}
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Available Balance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  ₹{paperBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                 </div>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Trades</CardTitle>
-                    <CardDescription>Your latest trading activities</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {recentTrades.map(trade => (
-                        <div key={trade.id} className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-md transition-colors">
-                          <div>
-                            <div className="font-medium">{trade.symbol}</div>
-                            <div className="text-sm text-muted-foreground">{trade.name}</div>
-                          </div>
-                          <div className="text-center">
-                            <div className={trade.type === 'BUY' ? 'text-success' : 'text-destructive'}>
-                              {trade.type}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {trade.quantity} × ₹{trade.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div>₹{(trade.quantity * trade.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                            <div className="text-sm text-muted-foreground">{trade.time}</div>
-                          </div>
-                        </div>
-                      ))}
-                      <div className="flex justify-center mt-4">
-                        <Button variant="outline" size="sm">View All Trades</Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="portfolio">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Your Portfolio</CardTitle>
-                    <CardDescription>Track all your investments in one place</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {Object.keys(portfolio).length > 0 ? (
-                      <div className="relative overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="text-sm text-muted-foreground">
-                            <tr className="border-b">
-                              <th className="pb-2 text-left">Asset</th>
-                              <th className="pb-2 text-right">Quantity</th>
-                              <th className="pb-2 text-right">Avg. Price</th>
-                              <th className="pb-2 text-right">Current Value</th>
-                              <th className="pb-2 text-right">P&L</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {Object.values(portfolio).map((position) => {
-                              const asset = [...stocksData, ...cryptoData].find(a => a.symbol === position.symbol);
-                              const currentPrice = asset ? asset.price : position.avgPrice;
-                              const currentValue = position.quantity * currentPrice;
-                              const profitLoss = currentValue - position.totalInvestment;
-                              const profitLossPercent = (profitLoss / position.totalInvestment) * 100;
-                              
-                              return (
-                                <tr key={position.symbol} className="border-b hover:bg-muted/50">
-                                  <td className="py-3">
-                                    <div className="font-medium">{position.symbol}</div>
-                                    <div className="text-xs text-muted-foreground">{position.name}</div>
-                                  </td>
-                                  <td className="py-3 text-right">{position.quantity}</td>
-                                  <td className="py-3 text-right">₹{position.avgPrice.toFixed(2)}</td>
-                                  <td className="py-3 text-right">₹{currentValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
-                                  <td className={`py-3 text-right ${profitLoss >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                    ₹{profitLoss.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                                    <br />
-                                    <span className="text-xs">
-                                      ({profitLossPercent >= 0 ? '+' : ''}{profitLossPercent.toFixed(2)}%)
-                                    </span>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <BarChart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-medium mb-2">No Portfolio Assets</h3>
-                        <p className="text-muted-foreground mb-4">
-                          You haven't added any assets to your portfolio yet.
-                        </p>
-                        <Button asChild>
-                          <Link to="/markets">Browse Markets</Link>
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="watchlist">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Your Watchlist</CardTitle>
-                    <CardDescription>Keep track of assets you're interested in</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <AssetTable type="ALL" showSearch={true} compact={true} />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="activities">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Activities</CardTitle>
-                    <CardDescription>Your recent trades and account activities</CardDescription>
-                  </CardHeader>
-                  <CardContent>
+                <p className="text-xs text-muted-foreground">
+                  Paper trading balance
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Today's P&L
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-success">
+                  +₹{(calculateFilteredPortfolioValue() * 0.0121).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                </div>
+                <p className="text-xs text-success">
+                  +1.21% today
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="lg:col-span-2">
+              <PortfolioSummary 
+                isLoading={isLoading}
+                portfolio={filteredPortfolio()}
+                getCurrentPrice={getCurrentPrice}
+                totalValue={calculateFilteredPortfolioValue()}
+                profitLoss={calculateFilteredPortfolioValue() * 0.15} // Simulated profit/loss
+              />
+            </div>
+            
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Asset Allocation</span>
+                    <PieChart className="w-5 h-5 text-muted-foreground" />
+                  </CardTitle>
+                  <CardDescription>Breakdown of your portfolio by asset type</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {Object.keys(portfolio).length > 0 ? (
                     <div className="space-y-4">
-                      {/* Activity items */}
-                      <div className="border-l-2 border-primary pl-4 relative">
-                        <div className="absolute w-3 h-3 bg-primary rounded-full -left-[6.5px] top-1.5"></div>
-                        <div className="flex justify-between">
-                          <div>
-                            <h4 className="font-medium">Bought RELIANCE</h4>
-                            <p className="text-sm text-muted-foreground">10 shares at ₹2,563.45</p>
-                          </div>
-                          <div className="text-sm text-muted-foreground">Today, 09:45 AM</div>
+                      {/* Calculate stock allocation */}
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                          <span>Stocks</span>
                         </div>
+                        <span className="font-medium">
+                          {(() => {
+                            const stockValue = Object.values(portfolio)
+                              .filter(p => p.type === 'STOCK')
+                              .reduce((sum, p) => sum + (p.quantity * getCurrentPrice(p.symbol)), 0);
+                            const totalValue = calculateFilteredPortfolioValue();
+                            return totalValue > 0 ? `${((stockValue / totalValue) * 100).toFixed(1)}%` : '0%';
+                          })()}
+                        </span>
                       </div>
                       
-                      <div className="border-l-2 border-destructive pl-4 relative">
-                        <div className="absolute w-3 h-3 bg-destructive rounded-full -left-[6.5px] top-1.5"></div>
-                        <div className="flex justify-between">
-                          <div>
-                            <h4 className="font-medium">Sold INFY</h4>
-                            <p className="text-sm text-muted-foreground">5 shares at ₹1,874.20</p>
-                          </div>
-                          <div className="text-sm text-muted-foreground">Yesterday, 02:15 PM</div>
+                      {/* Calculate crypto allocation */}
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
+                          <span>Crypto</span>
                         </div>
+                        <span className="font-medium">
+                          {(() => {
+                            const cryptoValue = Object.values(portfolio)
+                              .filter(p => p.type === 'CRYPTO')
+                              .reduce((sum, p) => sum + (p.quantity * getCurrentPrice(p.symbol)), 0);
+                            const totalValue = calculateFilteredPortfolioValue();
+                            return totalValue > 0 ? `${((cryptoValue / totalValue) * 100).toFixed(1)}%` : '0%';
+                          })()}
+                        </span>
                       </div>
                       
-                      <div className="border-l-2 border-primary pl-4 relative">
-                        <div className="absolute w-3 h-3 bg-primary rounded-full -left-[6.5px] top-1.5"></div>
-                        <div className="flex justify-between">
-                          <div>
-                            <h4 className="font-medium">Bought BTC</h4>
-                            <p className="text-sm text-muted-foreground">0.05 BTC at ₹48,53,123.50</p>
-                          </div>
-                          <div className="text-sm text-muted-foreground">2 days ago, 10:30 AM</div>
-                        </div>
-                      </div>
-                      
-                      <div className="border-l-2 border-muted-foreground pl-4 relative">
-                        <div className="absolute w-3 h-3 bg-muted-foreground rounded-full -left-[6.5px] top-1.5"></div>
-                        <div className="flex justify-between">
-                          <div>
-                            <h4 className="font-medium">Account Funded</h4>
-                            <p className="text-sm text-muted-foreground">Added ₹25,000 to your account</p>
-                          </div>
-                          <div className="text-sm text-muted-foreground">5 days ago, 11:20 AM</div>
+                      <div className="pt-4 pb-2">
+                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                          <div 
+                            className="bg-blue-500 h-full" 
+                            style={{ 
+                              width: (() => {
+                                const stockValue = Object.values(portfolio)
+                                  .filter(p => p.type === 'STOCK')
+                                  .reduce((sum, p) => sum + (p.quantity * getCurrentPrice(p.symbol)), 0);
+                                const totalValue = calculateFilteredPortfolioValue();
+                                return totalValue > 0 ? `${(stockValue / totalValue) * 100}%` : '0%';
+                              })()
+                            }}
+                          ></div>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="flex justify-center mt-6">
-                      <Button variant="outline" className="flex items-center gap-1">
-                        View All Activities <ArrowRight className="h-4 w-4 ml-1" />
+                  ) : (
+                    <div className="py-8 text-center text-muted-foreground">
+                      <p>No assets in your portfolio yet.</p>
+                      <Button variant="link" asChild>
+                        <Link to="/markets">Start Trading</Link>
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  )}
+                </CardContent>
+                <CardFooter className="border-t pt-4">
+                  <Button variant="outline" size="sm" className="w-full" asChild>
+                    <Link to="/portfolio">
+                      View Full Portfolio <ArrowRight className="w-4 h-4 ml-2" />
+                    </Link>
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </div>
+          
+          {/* Market Movers Tabs */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Market Movers</h2>
+            
+            <Tabs defaultValue="stocks" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="stocks">Stocks</TabsTrigger>
+                <TabsTrigger value="crypto">Crypto</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="stocks">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Top Gainers - Stocks */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center text-lg">
+                        <TrendingUp className="w-5 h-5 text-success mr-2" />
+                        Top Gainers - Stocks
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-2">
+                      <div className="space-y-1">
+                        {topGainersStocks.map((stock) => (
+                          <Link 
+                            key={stock.symbol}
+                            to={`/trade/${stock.symbol}`}
+                            className="flex items-center justify-between p-2 hover:bg-muted rounded-md"
+                          >
+                            <div className="flex items-center">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2">
+                                <span className="text-primary text-xs">{stock.symbol.charAt(0)}</span>
+                              </div>
+                              <div>
+                                <div className="font-medium">{stock.symbol}</div>
+                                <div className="text-xs text-muted-foreground">{stock.name}</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div>₹{stock.price.toLocaleString()}</div>
+                              <div className="text-success text-sm">+{stock.changePercent.toFixed(2)}%</div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </CardContent>
+                    <CardFooter className="border-t pt-4">
+                      <Button variant="ghost" size="sm" className="w-full" asChild>
+                        <Link to="/markets?filter=gainers&type=stock">
+                          View All Gainers
+                        </Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                  
+                  {/* Top Losers - Stocks */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center text-lg">
+                        <TrendingDown className="w-5 h-5 text-destructive mr-2" />
+                        Top Losers - Stocks
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-2">
+                      <div className="space-y-1">
+                        {topLosersStocks.map((stock) => (
+                          <Link 
+                            key={stock.symbol}
+                            to={`/trade/${stock.symbol}`}
+                            className="flex items-center justify-between p-2 hover:bg-muted rounded-md"
+                          >
+                            <div className="flex items-center">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2">
+                                <span className="text-primary text-xs">{stock.symbol.charAt(0)}</span>
+                              </div>
+                              <div>
+                                <div className="font-medium">{stock.symbol}</div>
+                                <div className="text-xs text-muted-foreground">{stock.name}</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div>₹{stock.price.toLocaleString()}</div>
+                              <div className="text-destructive text-sm">{stock.changePercent.toFixed(2)}%</div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </CardContent>
+                    <CardFooter className="border-t pt-4">
+                      <Button variant="ghost" size="sm" className="w-full" asChild>
+                        <Link to="/markets?filter=losers&type=stock">
+                          View All Losers
+                        </Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="crypto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Top Gainers - Crypto */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center text-lg">
+                        <TrendingUp className="w-5 h-5 text-success mr-2" />
+                        Top Gainers - Crypto
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-2">
+                      <div className="space-y-1">
+                        {topGainersCrypto.map((crypto) => (
+                          <Link 
+                            key={crypto.symbol}
+                            to={`/trade/${crypto.symbol}`}
+                            className="flex items-center justify-between p-2 hover:bg-muted rounded-md"
+                          >
+                            <div className="flex items-center">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2">
+                                <span className="text-primary text-xs">{crypto.symbol.charAt(0)}</span>
+                              </div>
+                              <div>
+                                <div className="font-medium">{crypto.symbol}</div>
+                                <div className="text-xs text-muted-foreground">{crypto.name}</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div>₹{crypto.price.toLocaleString()}</div>
+                              <div className="text-success text-sm">+{crypto.changePercent.toFixed(2)}%</div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </CardContent>
+                    <CardFooter className="border-t pt-4">
+                      <Button variant="ghost" size="sm" className="w-full" asChild>
+                        <Link to="/markets?filter=gainers&type=crypto">
+                          View All Gainers
+                        </Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                  
+                  {/* Top Losers - Crypto */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center text-lg">
+                        <TrendingDown className="w-5 h-5 text-destructive mr-2" />
+                        Top Losers - Crypto
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-2">
+                      <div className="space-y-1">
+                        {topLosersCrypto.map((crypto) => (
+                          <Link 
+                            key={crypto.symbol}
+                            to={`/trade/${crypto.symbol}`}
+                            className="flex items-center justify-between p-2 hover:bg-muted rounded-md"
+                          >
+                            <div className="flex items-center">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2">
+                                <span className="text-primary text-xs">{crypto.symbol.charAt(0)}</span>
+                              </div>
+                              <div>
+                                <div className="font-medium">{crypto.symbol}</div>
+                                <div className="text-xs text-muted-foreground">{crypto.name}</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div>₹{crypto.price.toLocaleString()}</div>
+                              <div className="text-destructive text-sm">{crypto.changePercent.toFixed(2)}%</div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </CardContent>
+                    <CardFooter className="border-t pt-4">
+                      <Button variant="ghost" size="sm" className="w-full" asChild>
+                        <Link to="/markets?filter=losers&type=crypto">
+                          View All Losers
+                        </Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </div>
               </TabsContent>
             </Tabs>
           </div>
+          
+          {/* Recent Activity */}
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Activity className="w-5 h-5 mr-2" />
+                  Trading Activity
+                </CardTitle>
+                <CardDescription>Your recent trading activity</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {Object.keys(portfolio).length > 0 ? (
+                  <div className="space-y-4">
+                    {Object.entries(portfolio).slice(0, 5).map(([symbol, position]) => (
+                      <div key={symbol} className="flex items-center justify-between p-2 border-b">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                            <span className="text-primary">{symbol.charAt(0)}</span>
+                          </div>
+                          <div>
+                            <div className="font-medium">{position.name}</div>
+                            <div className="text-sm text-muted-foreground">{position.quantity} shares at avg. ₹{position.avgPrice.toFixed(2)}</div>
+                          </div>
+                        </div>
+                        <Link to={`/trade/${symbol}`} className="text-primary hover:underline">
+                          Trade
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-muted-foreground">
+                    <p>No trading activity yet.</p>
+                    <Button variant="link" asChild>
+                      <Link to="/markets">Start Trading</Link>
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" size="sm" className="w-full" asChild>
+                  <Link to="/portfolio">
+                    View All Activity <ArrowRight className="w-4 h-4 ml-2" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
         </div>
       </main>
+      
       <Footer />
     </div>
   );

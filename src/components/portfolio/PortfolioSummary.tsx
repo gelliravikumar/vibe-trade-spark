@@ -1,8 +1,9 @@
 
-import React, { useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import React, { useMemo, useState } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { CardSkeleton } from '@/components/common/Loader';
 import { PortfolioPosition } from '@/hooks/use-portfolio';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface PortfolioSummaryProps {
   isLoading?: boolean;
@@ -19,13 +20,19 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
   totalValue = 0,
   profitLoss = 0
 }) => {
+  const [portfolioType, setPortfolioType] = useState<'all' | 'stocks' | 'crypto'>('all');
+  
   // Calculate portfolio allocations
   const allocations = useMemo(() => {
     if (!portfolio || Object.keys(portfolio).length === 0) {
-      return [];
+      return {
+        all: [],
+        stocks: [],
+        crypto: []
+      };
     }
     
-    const allocationData = Object.values(portfolio).map(position => {
+    const allAllocations = Object.values(portfolio).map(position => {
       const currentPrice = getCurrentPrice(position.symbol);
       const value = position.quantity * currentPrice;
       
@@ -39,7 +46,17 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
     });
     
     // Sort by value in descending order
-    return allocationData.sort((a, b) => b.value - a.value);
+    const sortedAllocations = allAllocations.sort((a, b) => b.value - a.value);
+    
+    // Filter for stocks and crypto
+    const stockAllocations = sortedAllocations.filter(item => item.type === 'STOCK');
+    const cryptoAllocations = sortedAllocations.filter(item => item.type === 'CRYPTO');
+    
+    return {
+      all: sortedAllocations,
+      stocks: stockAllocations,
+      crypto: cryptoAllocations
+    };
   }, [portfolio, getCurrentPrice]);
   
   // Get a color based on asset type
@@ -63,9 +80,13 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
   const dayChangePercent = totalValue > 0 ? (dayChange / totalValue) * 100 : 0;
   const isPositiveDay = dayChange >= 0;
   
+  // Calculate filtered portfolio values
+  const filteredAllocations = allocations[portfolioType];
+  const filteredTotalValue = filteredAllocations.reduce((sum, item) => sum + item.value, 0);
+  
   // Top allocations for display in the sidebar
-  const topAllocations = allocations.slice(0, 5);
-  const otherAllocations = allocations.slice(5);
+  const topAllocations = filteredAllocations.slice(0, 5);
+  const otherAllocations = filteredAllocations.slice(5);
   const otherValue = otherAllocations.reduce((sum, item) => sum + item.value, 0);
   
   // Add "Others" category if needed
@@ -86,7 +107,21 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
   
   return (
     <div className="glass-card rounded-lg p-5 animate-fade-in">
-      <h2 className="text-xl font-semibold mb-4">Portfolio Summary</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Portfolio Summary</h2>
+        <Tabs 
+          defaultValue="all" 
+          value={portfolioType} 
+          onValueChange={(value) => setPortfolioType(value as 'all' | 'stocks' | 'crypto')}
+          className="w-auto"
+        >
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="stocks">Stocks</TabsTrigger>
+            <TabsTrigger value="crypto">Crypto</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
       
       {Object.keys(portfolio).length === 0 ? (
         <div className="py-8 text-center text-muted-foreground">
@@ -97,13 +132,15 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
           <div className="space-y-4">
             <div>
               <p className="text-sm text-muted-foreground">Total Value</p>
-              <p className="text-3xl font-semibold">₹{totalValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+              <p className="text-3xl font-semibold">
+                ₹{filteredTotalValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              </p>
             </div>
             
             <div>
               <p className="text-sm text-muted-foreground">Today's Change</p>
               <p className={`text-lg font-medium ${isPositiveDay ? 'text-success' : 'text-destructive'}`}>
-                {isPositiveDay ? '+' : ''}₹{dayChange.toLocaleString('en-IN', { maximumFractionDigits: 2 })} ({isPositiveDay ? '+' : ''}{dayChangePercent.toFixed(2)}%)
+                {isPositiveDay ? '+' : ''}₹{(dayChange * (filteredTotalValue / totalValue)).toLocaleString('en-IN', { maximumFractionDigits: 2 })} ({isPositiveDay ? '+' : ''}{dayChangePercent.toFixed(2)}%)
               </p>
             </div>
             
@@ -118,7 +155,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
                     />
                     <span className="text-sm flex-1">{item.name}</span>
                     <span className="text-sm font-medium">
-                      {((item.value / totalValue) * 100).toFixed(1)}%
+                      {((item.value / filteredTotalValue) * 100).toFixed(1)}%
                     </span>
                   </div>
                 ))}
@@ -152,8 +189,31 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
                     color: 'var(--card-foreground)'
                   }}
                 />
+                <Legend />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+          
+          <div className="md:col-span-2">
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">Holdings</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+              {filteredAllocations.map((item) => (
+                <div key={item.symbol} className="bg-muted/30 p-3 rounded-lg">
+                  <div className="flex items-center mb-1">
+                    <div
+                      className="w-3 h-3 rounded-full mr-2"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="font-medium">{item.name}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">{item.symbol}</div>
+                  <div className="mt-1">₹{item.value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+                  <div className="text-xs">
+                    {((item.value / filteredTotalValue) * 100).toFixed(1)}% of portfolio
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

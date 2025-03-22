@@ -4,10 +4,36 @@ import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserProfile } from '@/components/profile/UserProfile';
 import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuLink, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu"
-import { Clock, TrendingUp } from 'lucide-react';
+import { Clock, TrendingUp, Globe } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Navbar = () => {
   const [time, setTime] = useState<string>('');
+  const [selectedTimezone, setSelectedTimezone] = useState<string>(() => {
+    return localStorage.getItem('tradeSmart_timezone') || 'Asia/Kolkata';
+  });
+  const [timezoneLabel, setTimezoneLabel] = useState<string>('IST');
+  
+  const timezones = [
+    { value: 'Asia/Kolkata', label: 'IST' },
+    { value: 'America/New_York', label: 'ET' },
+    { value: 'America/Los_Angeles', label: 'PT' },
+    { value: 'Europe/London', label: 'GMT' },
+    { value: 'Asia/Tokyo', label: 'JST' },
+    { value: 'Asia/Singapore', label: 'SGT' },
+  ];
+  
+  const handleTimezoneChange = (timezone: string, label: string) => {
+    setSelectedTimezone(timezone);
+    setTimezoneLabel(label);
+    localStorage.setItem('tradeSmart_timezone', timezone);
+  };
   
   useEffect(() => {
     const updateTime = () => {
@@ -16,16 +42,22 @@ export const Navbar = () => {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
-        hour12: false,
-        timeZone: 'Asia/Kolkata'
+        hour12: true,
+        timeZone: selectedTimezone
       };
       setTime(new Intl.DateTimeFormat('en-IN', options).format(now));
     };
     
+    // Find the label for the selected timezone
+    const timezoneObj = timezones.find(tz => tz.value === selectedTimezone);
+    if (timezoneObj) {
+      setTimezoneLabel(timezoneObj.label);
+    }
+    
     updateTime();
     const timer = setInterval(updateTime, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [selectedTimezone]);
   
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -69,6 +101,20 @@ export const Navbar = () => {
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
+                <Link to="/news">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    News
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/community">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Community
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
                 <Link to="/learn">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     Learn
@@ -80,10 +126,30 @@ export const Navbar = () => {
         </div>
         
         <div className="flex items-center gap-4">
-          {/* Current timestamp (IST) */}
+          {/* Current timestamp (with timezone selector) */}
           <div className="hidden md:flex items-center text-sm">
             <Clock className="w-4 h-4 mr-1 text-muted-foreground" />
-            <CurrentTime timezone="Asia/Kolkata" label="IST" />
+            <span>{time}</span>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="ml-1 px-1">
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                  <span className="ml-1 text-xs text-muted-foreground">{timezoneLabel}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {timezones.map((tz) => (
+                  <DropdownMenuItem 
+                    key={tz.value} 
+                    onClick={() => handleTimezoneChange(tz.value, tz.label)}
+                    className={selectedTimezone === tz.value ? "bg-accent" : ""}
+                  >
+                    {tz.label} ({tz.value.split('/')[1].replace('_', ' ')})
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           
           {/* Theme Toggle */}
@@ -95,29 +161,4 @@ export const Navbar = () => {
       </div>
     </header>
   );
-};
-
-// Add a simple CurrentTime component
-const CurrentTime = ({ timezone, label }: { timezone: string, label: string }) => {
-  const [time, setTime] = useState<string>('');
-  
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const options: Intl.DateTimeFormatOptions = {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-        timeZone: timezone
-      };
-      setTime(new Intl.DateTimeFormat('en-IN', options).format(now));
-    };
-    
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
-  }, [timezone]);
-  
-  return <span>{time} <span className="text-muted-foreground">{label}</span></span>;
 };

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Calculator, AlertCircle, ShieldCheck, ExternalLink } from 'lucide-react';
+import { Calculator, AlertCircle, ShieldCheck, ExternalLink, Info, Tag, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePortfolio } from '@/hooks/use-portfolio';
 import { usePaperTrading } from '@/hooks/use-paper-trading';
@@ -21,6 +21,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface TradingFormProps {
   asset: any;
@@ -44,6 +47,7 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
   const [stopPrice, setStopPrice] = useState<string>('');
   const [orderTotal, setOrderTotal] = useState<number>(0);
   const [orderValidity, setOrderValidity] = useState<string>('day');
+  const [buyingMode, setBuyingMode] = useState<'quantity' | 'amount'>('quantity');
   
   const assetPortfolio = asset ? portfolio[asset.symbol] : null;
   
@@ -64,6 +68,23 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
       setStopPrice((asset.price * 0.95).toFixed(2));
     }
   }, [asset]);
+  
+  const calculateQuantity = (amount: string) => {
+    if (!asset) return '0';
+    
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) return '0';
+    
+    const assetPrice = orderMode === 'market' ? 
+      asset.price : 
+      parseFloat(price) || asset.price;
+      
+    return (numAmount / assetPrice).toFixed(asset.type === 'CRYPTO' ? 6 : 2);
+  };
+  
+  const handleAmountChange = (amount: string) => {
+    setQuantity(calculateQuantity(amount));
+  };
   
   const handlePlaceOrder = () => {
     if (!asset) return;
@@ -169,259 +190,186 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
     setQuantity('1');
   };
   
+  // Robinhood-style trading form
   return (
-    <div className="glass-card rounded-lg p-5">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold flex items-center">
-          <Calculator className="w-5 h-5 mr-2" />
-          Place Order
-        </h2>
-        
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="paper-trading"
-            checked={isPaperTrading}
-            onCheckedChange={setIsPaperTrading}
-          />
-          <Label htmlFor="paper-trading" className="flex items-center">
-            Paper Trading
+    <div className="glass-card rounded-lg">
+      <div className="bg-card rounded-t-lg p-4 border-b">
+        <h2 className="text-lg font-semibold flex items-center justify-between">
+          <span>
+            {orderType === 'buy' ? 'Buy' : 'Sell'} {asset?.symbol}
+          </span>
+          <div className="flex items-center">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <ShieldCheck className="h-4 w-4 ml-1 text-primary" />
+                  <ShieldCheck className="h-5 w-5 mr-2 text-primary" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Practice trading with virtual money.</p>
-                  <p>No real funds will be used.</p>
+                  <p>Paper Trading Mode: {isPaperTrading ? 'On' : 'Off'}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </Label>
+            <Switch
+              id="paper-trading"
+              checked={isPaperTrading}
+              onCheckedChange={setIsPaperTrading}
+            />
+          </div>
+        </h2>
+      </div>
+      
+      <div className="p-4">
+        <div className="mb-4">
+          <Label className="text-sm text-muted-foreground mb-1 block">Order type</Label>
+          <div className="flex gap-2">
+            <Select defaultValue="market" value={orderMode} onValueChange={(value) => setOrderMode(value as OrderMode)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Order type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="market">Market</SelectItem>
+                <SelectItem value="limit">Limit</SelectItem>
+                <SelectItem value="stop">Stop</SelectItem>
+                <SelectItem value="stop-limit">Stop Limit</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {orderMode !== 'market' && (
+            <div className="mt-4">
+              <Label className="text-sm text-muted-foreground mb-1 block">
+                {orderMode === 'limit' ? 'Limit Price' : 
+                 orderMode === 'stop' ? 'Stop Price' : 
+                 'Stop-Limit Price'}
+              </Label>
+              <div className="flex items-center">
+                <span className="text-sm mr-2">₹</span>
+                <Input
+                  type="number"
+                  value={orderMode === 'stop' ? stopPrice : price}
+                  onChange={(e) => orderMode === 'stop' ? setStopPrice(e.target.value) : setPrice(e.target.value)}
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+              
+              {orderMode === 'stop-limit' && (
+                <div className="mt-2">
+                  <Label className="text-sm text-muted-foreground mb-1 block">
+                    Stop Price
+                  </Label>
+                  <div className="flex items-center">
+                    <span className="text-sm mr-2">₹</span>
+                    <Input
+                      type="number"
+                      value={stopPrice}
+                      onChange={(e) => setStopPrice(e.target.value)}
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        
+        <div className="mb-4">
+          <Label className="text-sm text-muted-foreground mb-1 block">Buy in</Label>
+          <Tabs defaultValue="quantity" onValueChange={(value) => setBuyingMode(value as 'quantity' | 'amount')}>
+            <TabsList className="grid w-full grid-cols-2 mb-2">
+              <TabsTrigger value="quantity">Quantity</TabsTrigger>
+              <TabsTrigger value="amount">Amount</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="quantity">
+              <div className="flex items-center mt-2">
+                <Input
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  step={asset?.type === 'CRYPTO' ? "0.000001" : "1"}
+                  min="0"
+                />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="amount">
+              <div className="flex items-center mt-2">
+                <span className="text-sm mr-2">₹</span>
+                <Input
+                  type="number"
+                  value={orderTotal.toString()}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+        
+        <div className="mt-4 mb-6">
+          <div className="flex justify-between items-center py-2 text-sm">
+            <span className="text-muted-foreground">Market Price</span>
+            <span>₹{asset?.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+          </div>
+          
+          <div className="flex justify-between items-center py-2 text-sm">
+            <span className="text-muted-foreground">Estimated {orderType === 'buy' ? 'Cost' : 'Credit'}</span>
+            <span>₹{orderTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+          </div>
+          
+          {buyingMode === 'amount' && (
+            <div className="flex justify-between items-center py-2 text-sm">
+              <span className="text-muted-foreground">Estimated Quantity</span>
+              <span>{quantity} {asset?.symbol}</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex flex-col gap-4">
+          <Button 
+            className={`w-full py-3 ${orderType === 'buy' ? 'bg-success hover:bg-success/90' : 'bg-destructive hover:bg-destructive/90'}`}
+            onClick={handlePlaceOrder}
+          >
+            Review Order
+          </Button>
+          
+          <div>
+            <div className="flex justify-center gap-4 mb-2">
+              <Button variant="outline" 
+                className={`flex-1 ${orderType === 'buy' ? 'border-success text-success' : 'border-gray-400 text-muted-foreground'}`} 
+                onClick={() => setOrderType('buy')}
+              >
+                Buy
+              </Button>
+              <Button variant="outline" 
+                className={`flex-1 ${orderType === 'sell' ? 'border-destructive text-destructive' : 'border-gray-400 text-muted-foreground'}`} 
+                onClick={() => setOrderType('sell')}
+              >
+                Sell
+              </Button>
+            </div>
+            
+            <p className="text-center text-xs text-muted-foreground">
+              {isPaperTrading ? 
+                `Paper Trading Balance: ₹${paperBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 
+                'Trading with real money'}
+            </p>
+          </div>
         </div>
       </div>
       
-      <Tabs defaultValue="basic" className="mb-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="basic">Basic</TabsTrigger>
-          <TabsTrigger value="advanced">Advanced</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="basic" className="pt-4">
-          <div className="flex gap-2 mb-4">
-            <button
-              className={`flex-1 py-2 px-4 rounded-lg font-medium ${
-                orderType === 'buy' 
-                  ? 'bg-success/10 text-success border border-success' 
-                  : 'bg-muted text-muted-foreground border border-transparent'
-              }`}
-              onClick={() => setOrderType('buy')}
-            >
-              Buy
-            </button>
-            <button
-              className={`flex-1 py-2 px-4 rounded-lg font-medium ${
-                orderType === 'sell' 
-                  ? 'bg-destructive/10 text-destructive border border-destructive' 
-                  : 'bg-muted text-muted-foreground border border-transparent'
-              }`}
-              onClick={() => setOrderType('sell')}
-            >
-              Sell
-            </button>
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
-              Order Type
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button
-                className={`py-1 px-2 rounded-md text-xs font-medium ${
-                  orderMode === 'market' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-secondary text-secondary-foreground'
-                }`}
-                onClick={() => setOrderMode('market')}
-              >
-                Market
-              </button>
-              <button
-                className={`py-1 px-2 rounded-md text-xs font-medium ${
-                  orderMode === 'limit' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-secondary text-secondary-foreground'
-                }`}
-                onClick={() => setOrderMode('limit')}
-              >
-                Limit
-              </button>
-              <button
-                className={`py-1 px-2 rounded-md text-xs font-medium ${
-                  orderMode === 'stop' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-secondary text-secondary-foreground'
-                }`}
-                onClick={() => setOrderMode('stop')}
-              >
-                Stop
-              </button>
-              <button
-                className={`py-1 px-2 rounded-md text-xs font-medium ${
-                  orderMode === 'stop-limit' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-secondary text-secondary-foreground'
-                }`}
-                onClick={() => setOrderMode('stop-limit')}
-              >
-                Stop Limit
-              </button>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            {orderMode !== 'market' && (
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Price (₹)
-                </label>
-                <input
-                  type="text"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="w-full p-2 border rounded-lg bg-muted"
-                />
-              </div>
-            )}
-            
-            {(orderMode === 'stop' || orderMode === 'stop-limit') && (
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Stop Price (₹)
-                </label>
-                <input
-                  type="text"
-                  value={stopPrice}
-                  onChange={(e) => setStopPrice(e.target.value)}
-                  className="w-full p-2 border rounded-lg bg-muted"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {orderType === 'buy' ? 
-                    'Order will execute when price rises to this value' : 
-                    'Order will execute when price falls to this value'}
-                </p>
-              </div>
-            )}
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Quantity
-              </label>
-              <input
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                className="w-full p-2 border rounded-lg bg-muted"
-                min="0"
-                step="0.01"
-              />
-            </div>
-            
-            {orderMode === 'market' && (
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Market Price (₹)
-                </label>
-                <input
-                  type="text"
-                  value={asset?.price?.toFixed(2) || ''}
-                  className="w-full p-2 border rounded-lg bg-muted"
-                  readOnly
-                />
-              </div>
-            )}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="advanced" className="pt-4">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Order Validity
-              </label>
-              <Select value={orderValidity} onValueChange={setOrderValidity}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select order validity" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="day">Day Order (Valid until market close)</SelectItem>
-                  <SelectItem value="gtc">Good Till Cancelled (GTC)</SelectItem>
-                  <SelectItem value="ioc">Immediate or Cancel (IOC)</SelectItem>
-                  <SelectItem value="fok">Fill or Kill (FOK)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Disclosure Quantity
-              </label>
-              <input
-                type="number"
-                placeholder="Optional"
-                className="w-full p-2 border rounded-lg bg-muted"
-                min="0"
-                step="1"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                For large orders, specify quantity to disclose at a time
-              </p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                AMO (After Market Order)
-              </label>
-              <div className="flex items-center space-x-2">
-                <Switch id="amo-order" />
-                <Label htmlFor="amo-order">Place as AMO</Label>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Order will be sent when market opens next
-              </p>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-      
-      {isPaperTrading && (
-        <div className="p-3 rounded-lg bg-primary/10 mb-4">
-          <h3 className="font-medium mb-2 flex items-center">
-            <ShieldCheck className="h-4 w-4 mr-1 text-primary" />
-            Paper Trading Mode
-          </h3>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>Paper Balance:</div>
-            <div className="text-right font-medium">
-              ₹{paperBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Trading with virtual money for practice. No real funds are used.
-          </p>
-        </div>
-      )}
-      
       {assetPortfolio && (
-        <div className="p-3 rounded-lg bg-secondary/20 mt-4">
+        <div className="mt-4 p-4 border-t">
           <h3 className="font-medium mb-2">Your Position</h3>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>Holding:</div>
             <div className="text-right font-medium">{assetPortfolio.quantity} {asset.symbol}</div>
             <div>Avg. Cost:</div>
             <div className="text-right font-medium">₹{assetPortfolio.avgPrice.toFixed(2)}</div>
-            <div>Investment:</div>
-            <div className="text-right font-medium">₹{assetPortfolio.totalInvestment.toFixed(2)}</div>
-            <div>Current Value:</div>
+            <div>Market Value:</div>
             <div className="text-right font-medium">₹{(assetPortfolio.quantity * asset.price).toFixed(2)}</div>
             <div>P&L:</div>
             <div className={`text-right font-medium ${(assetPortfolio.quantity * asset.price) > assetPortfolio.totalInvestment ? 'text-success' : 'text-destructive'}`}>
@@ -429,38 +377,28 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
               ({(((assetPortfolio.quantity * asset.price) / assetPortfolio.totalInvestment - 1) * 100).toFixed(2)}%)
             </div>
           </div>
+          
+          {asset.type === 'STOCK' && (
+            <div className="mt-4 pt-4 border-t">
+              <Button variant="outline" className="w-full text-sm">
+                Trade {asset.symbol} Options <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
       
-      <div className="flex items-center justify-between py-2 mb-2">
-        <span>Order Value:</span>
-        <span className="font-semibold">₹{orderTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+      <div className="p-4 mt-4 border-t flex justify-between items-center">
+        <Button variant="ghost" size="sm" className="text-xs">
+          <Tag className="w-3.5 h-3.5 mr-1" />
+          Add to Lists
+        </Button>
+        
+        <Button variant="ghost" size="sm" className="text-xs">
+          <Info className="w-3.5 h-3.5 mr-1" />
+          Learn More
+        </Button>
       </div>
-      
-      <button
-        className={`w-full py-3 rounded-lg font-medium ${
-          orderType === 'buy' ? 'bg-success text-white' : 'bg-destructive text-white'
-        }`}
-        onClick={handlePlaceOrder}
-      >
-        {orderType === 'buy' ? 'Buy' : 'Sell'} {asset?.symbol}
-      </button>
-      
-      {(orderMode === 'limit' || orderMode === 'stop' || orderMode === 'stop-limit') && (
-        <div className="flex items-center mt-2 p-2 rounded bg-warning/10 text-warning">
-          <AlertCircle className="w-4 h-4 mr-2" />
-          <span className="text-xs">Advanced orders are simulated for demonstration. In a real app, these would be sent to an exchange.</span>
-        </div>
-      )}
-      
-      {!isPaperTrading && (
-        <div className="mt-4 pt-4 border-t">
-          <Button variant="outline" className="w-full text-sm flex items-center justify-center">
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Learn More About Trading Options
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
