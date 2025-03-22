@@ -1,278 +1,466 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { MarketSummary } from '@/components/home/MarketSummary';
 import { TrendingAssets } from '@/components/home/TrendingAssets';
-import { ArrowRight, BarChart3, LineChart, TrendingUp, Zap, ChevronRight, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { DetailedChart } from '@/components/charts/DetailedChart';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useData } from '@/context/DataContext';
 import { usePaperTrading } from '@/hooks/use-paper-trading';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { usePortfolio } from '@/hooks/use-portfolio';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowRight, BarChart3, ChevronRight, LineChart, PieChart, TrendingUp, Wallet, ArrowUpDown, Clock } from 'lucide-react';
 
 const Index = () => {
+  const navigate = useNavigate();
   const { stocksData, cryptoData } = useData();
-  const { portfolioValue, paperBalance } = usePaperTrading();
-  const [stockGainers, setStockGainers] = useState<any[]>([]);
-  const [cryptoGainers, setCryptoGainers] = useState<any[]>([]);
+  const { paperBalance, portfolioValue, isPaperTrading } = usePaperTrading();
+  const { portfolio } = usePortfolio();
+  const [chartAsset, setChartAsset] = useState('NIFTY');
+  const [timeFrame, setTimeFrame] = useState<'1D' | '1W' | '1M' | '3M' | '1Y'>('1D');
   
-  useEffect(() => {
-    // Get top gainers for stocks and crypto
-    if (stocksData.length > 0) {
-      const sortedStocks = [...stocksData].sort((a, b) => b.changePercent - a.changePercent);
-      setStockGainers(sortedStocks.slice(0, 3));
-    }
+  // Top gainers and losers in stocks
+  const topGainersStocks = [...stocksData]
+    .sort((a, b) => b.changePercent - a.changePercent)
+    .slice(0, 5);
     
-    if (cryptoData.length > 0) {
-      const sortedCrypto = [...cryptoData].sort((a, b) => b.changePercent - a.changePercent);
-      setCryptoGainers(sortedCrypto.slice(0, 3));
-    }
-  }, [stocksData, cryptoData]);
+  const topLosersStocks = [...stocksData]
+    .sort((a, b) => a.changePercent - b.changePercent)
+    .slice(0, 5);
+  
+  // Top gainers and losers in crypto
+  const topGainersCrypto = [...cryptoData]
+    .sort((a, b) => b.changePercent - a.changePercent)
+    .slice(0, 3);
+    
+  const topLosersCrypto = [...cryptoData]
+    .sort((a, b) => a.changePercent - b.changePercent)
+    .slice(0, 3);
+  
+  // Calculate portfolio stats
+  const portfolioStats = {
+    totalValue: portfolioValue + paperBalance,
+    stocksValue: Object.values(portfolio)
+      .filter(pos => pos.type === 'STOCK')
+      .reduce((sum, pos) => {
+        const stockData = stocksData.find(s => s.symbol === pos.symbol);
+        return sum + (pos.quantity * (stockData?.price || pos.avgPrice));
+      }, 0),
+    cryptoValue: Object.values(portfolio)
+      .filter(pos => pos.type === 'CRYPTO')
+      .reduce((sum, pos) => {
+        const cryptoData = cryptoData.find(c => c.symbol === pos.symbol);
+        return sum + (pos.quantity * (cryptoData?.price || pos.avgPrice));
+      }, 0),
+  };
   
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
-      <main className="flex-grow">
-        {/* Portfolio Overview Section (Robinhood-style) */}
-        <section className="pt-8 pb-4 px-4">
-          <div className="max-w-7xl mx-auto">
-            <div className="glass-card rounded-lg p-6 mb-6">
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">
-                Investing
-              </h1>
-              <div className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-                ₹{(portfolioValue + paperBalance).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-              </div>
-              <div className="flex items-center text-success mb-6">
-                <TrendingUp className="w-5 h-5 mr-2" />
-                <span className="text-lg font-semibold">
-                  +₹{(portfolioValue * 0.0121).toLocaleString('en-IN', { maximumFractionDigits: 2 })} (+1.21%) Today
-                </span>
-              </div>
-              
-              <div className="w-full h-40 md:h-56 bg-muted/30 rounded-lg overflow-hidden mb-6">
-                <img 
-                  src="/public/lovable-uploads/214efdad-f251-4a0a-af21-c11274943344.png" 
-                  alt="Portfolio chart" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              
-              <div className="flex space-x-2 overflow-x-auto pb-2 mb-2">
-                <Button variant="outline" size="sm" className="whitespace-nowrap">
-                  LIVE
-                </Button>
-                <Button variant="default" size="sm" className="whitespace-nowrap">
-                  1D
-                </Button>
-                <Button variant="outline" size="sm" className="whitespace-nowrap">
-                  1W
-                </Button>
-                <Button variant="outline" size="sm" className="whitespace-nowrap">
-                  1M
-                </Button>
-                <Button variant="outline" size="sm" className="whitespace-nowrap">
-                  3M
-                </Button>
-                <Button variant="outline" size="sm" className="whitespace-nowrap">
-                  YTD
-                </Button>
-                <Button variant="outline" size="sm" className="whitespace-nowrap">
-                  1Y
-                </Button>
-                <Button variant="outline" size="sm" className="whitespace-nowrap">
-                  ALL
-                </Button>
-              </div>
-              
-              <div className="flex items-center justify-between py-3 border-t">
-                <div className="flex items-center">
-                  <span className="font-semibold">Buying power</span>
-                  <ExternalLink className="w-4 h-4 ml-2 text-muted-foreground" />
-                </div>
-                <span className="font-semibold">₹{paperBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-              </div>
-            </div>
-          </div>
-        </section>
-        
-        {/* Market Summary */}
-        <section className="py-6 px-4">
-          <div className="max-w-7xl mx-auto">
-            <MarketSummary />
-          </div>
-        </section>
-        
-        {/* Crypto and Stocks Sections */}
-        <section className="py-6 px-4">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Cryptocurrency Section */}
-            <div className="glass-card rounded-lg p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Cryptocurrencies</h2>
-                <Link to="/markets?type=crypto" className="text-sm flex items-center text-primary hover:underline">
-                  View all <ChevronRight className="w-4 h-4 ml-1" />
-                </Link>
-              </div>
-              
-              <div className="space-y-3">
-                {cryptoGainers.map((crypto) => (
-                  <Link 
-                    key={crypto.symbol} 
-                    to={`/trade/${crypto.symbol}`} 
-                    className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-lg transition-colors"
-                  >
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-primary font-medium">{crypto.symbol.charAt(0)}</span>
-                      </div>
-                      <div>
-                        <div className="font-medium">{crypto.name}</div>
-                        <div className="text-sm text-muted-foreground">{crypto.symbol}</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-medium">₹{crypto.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                      <div className={crypto.changePercent >= 0 ? "text-success text-sm" : "text-destructive text-sm"}>
-                        {crypto.changePercent >= 0 ? '+' : ''}{crypto.changePercent.toFixed(2)}%
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-            
-            {/* Stocks Section */}
-            <div className="glass-card rounded-lg p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Stocks</h2>
-                <Link to="/markets?type=stock" className="text-sm flex items-center text-primary hover:underline">
-                  View all <ChevronRight className="w-4 h-4 ml-1" />
-                </Link>
-              </div>
-              
-              <div className="space-y-3">
-                {stockGainers.map((stock) => (
-                  <Link 
-                    key={stock.symbol} 
-                    to={`/trade/${stock.symbol}`} 
-                    className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-lg transition-colors"
-                  >
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-primary font-medium">{stock.symbol.charAt(0)}</span>
-                      </div>
-                      <div>
-                        <div className="font-medium">{stock.name}</div>
-                        <div className="text-sm text-muted-foreground">{stock.symbol}</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-medium">₹{stock.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                      <div className={stock.changePercent >= 0 ? "text-success text-sm" : "text-destructive text-sm"}>
-                        {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-        
-        {/* Features Section */}
-        <section className="py-16 px-4 bg-secondary/50">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              Powerful Trading Features
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="glass-card rounded-lg p-6 text-center">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <LineChart className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">
-                  Real-Time Data
-                </h3>
-                <p className="text-muted-foreground">
-                  Get instant price updates with WebSocket connections and REST APIs
-                </p>
-              </div>
-              
-              <div className="glass-card rounded-lg p-6 text-center">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <BarChart3 className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">
-                  Advanced Charts
-                </h3>
-                <p className="text-muted-foreground">
-                  Analyze market trends with powerful interactive charts and indicators
-                </p>
-              </div>
-              
-              <div className="glass-card rounded-lg p-6 text-center">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">
-                  Smart Portfolios
-                </h3>
-                <p className="text-muted-foreground">
-                  Track your investments and performance with detailed analytics
-                </p>
-              </div>
-              
-              <div className="glass-card rounded-lg p-6 text-center">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Zap className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">
-                  Paper Trading
-                </h3>
-                <p className="text-muted-foreground">
-                  Practice with virtual money before investing real funds
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-        
-        {/* CTA Section */}
-        <section className="py-20 px-4 text-center bg-card">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Ready to start trading?
-            </h2>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join thousands of traders using our platform for Indian stocks and cryptocurrencies
+      <main className="flex-grow container mx-auto px-4 py-6 md:py-8 max-w-7xl">
+        {/* Hero Section */}
+        <section className="mb-8">
+          <div className="text-center md:text-left mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">
+              Welcome to TradePaisa
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              The smart way to trade stocks and crypto in India
             </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link to="/markets" className="btn-primary text-lg py-3 px-8 rounded-full">
-                Explore Markets
-              </Link>
-              <Link to="/paper-trading" className="btn-secondary text-lg py-3 px-8 rounded-full">
-                Try Paper Trading
-              </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+            <div className="md:col-span-8">
+              <Card className="overflow-hidden">
+                <CardHeader className="pb-0">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>Market Chart</CardTitle>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Tabs defaultValue={chartAsset} onValueChange={setChartAsset}>
+                        <TabsList>
+                          <TabsTrigger value="NIFTY">NIFTY</TabsTrigger>
+                          <TabsTrigger value="SENSEX">SENSEX</TabsTrigger>
+                          <TabsTrigger value="BTC">BTC</TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                      
+                      <Tabs defaultValue={timeFrame} onValueChange={(value) => setTimeFrame(value as any)}>
+                        <TabsList>
+                          <TabsTrigger value="1D">1D</TabsTrigger>
+                          <TabsTrigger value="1W">1W</TabsTrigger>
+                          <TabsTrigger value="1M">1M</TabsTrigger>
+                          <TabsTrigger value="3M">3M</TabsTrigger>
+                          <TabsTrigger value="1Y">1Y</TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0 pt-4">
+                  <DetailedChart 
+                    height={400} 
+                    symbol={chartAsset} 
+                    timeFrame={timeFrame} 
+                    showControls={true} 
+                    fullWidth={true}
+                  />
+                </CardContent>
+              </Card>
             </div>
             
-            <div className="mt-10 pt-10 border-t border-muted">
-              <div className="flex justify-center items-center text-muted-foreground">
-                <span className="flex items-center mr-6">
-                  <LineChart className="w-5 h-5 mr-2" />
-                  <span>NSE</span>
-                </span>
-                <span className="flex items-center mr-6">
-                  <LineChart className="w-5 h-5 mr-2" />
-                  <span>BSE</span>
-                </span>
-                <span className="flex items-center">
-                  <LineChart className="w-5 h-5 mr-2" />
-                  <span>Global Markets</span>
-                </span>
+            <div className="md:col-span-4 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Wallet className="h-5 w-5 mr-2 text-primary" />
+                    Portfolio Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="bg-muted/30 p-3 rounded-lg">
+                        <div className="text-muted-foreground text-sm">Total Value</div>
+                        <div className="text-2xl font-bold">
+                          ₹{portfolioStats.totalValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-muted/30 p-3 rounded-lg">
+                          <div className="text-muted-foreground text-sm">Stocks</div>
+                          <div className="text-lg font-medium">
+                            ₹{portfolioStats.stocksValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                          </div>
+                        </div>
+                        
+                        <div className="bg-muted/30 p-3 rounded-lg">
+                          <div className="text-muted-foreground text-sm">Crypto</div>
+                          <div className="text-lg font-medium">
+                            ₹{portfolioStats.cryptoValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col space-y-2">
+                      {isPaperTrading && (
+                        <div className="flex justify-between items-center text-sm py-1">
+                          <span className="text-muted-foreground">Paper Cash</span>
+                          <span>₹{paperBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-between items-center text-sm py-1">
+                        <span className="text-muted-foreground">Assets</span>
+                        <span>₹{portfolioValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-sm py-1">
+                        <span className="text-muted-foreground">Trading Mode</span>
+                        <Badge variant={isPaperTrading ? 'outline' : 'default'}>
+                          {isPaperTrading ? 'Paper Trading' : 'Real Trading'}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2 grid grid-cols-2 gap-2">
+                      <Button 
+                        variant="default" 
+                        onClick={() => navigate('/trade/RELIANCE')}
+                        className="w-full"
+                      >
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Trade Now
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate('/portfolio')}
+                        className="w-full"
+                      >
+                        <PieChart className="mr-2 h-4 w-4" />
+                        Portfolio
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Clock className="h-5 w-5 mr-2 text-primary" />
+                    Market Hours
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <div className="flex flex-col">
+                        <span className="font-medium">NSE & BSE</span>
+                        <span className="text-sm text-muted-foreground">Indian Markets</span>
+                      </div>
+                      <Badge variant="outline" className="bg-green-500/10 text-green-500 hover:bg-green-500/10">
+                        Open
+                      </Badge>
+                    </div>
+                    <div className="text-sm grid grid-cols-2 gap-x-4 gap-y-1">
+                      <div className="text-muted-foreground">Trading Hours:</div>
+                      <div>9:15 AM - 3:30 PM</div>
+                      <div className="text-muted-foreground">Pre-market:</div>
+                      <div>9:00 AM - 9:15 AM</div>
+                    </div>
+                    
+                    <Separator className="my-2" />
+                    
+                    <div className="flex justify-between items-center">
+                      <div className="flex flex-col">
+                        <span className="font-medium">Crypto</span>
+                        <span className="text-sm text-muted-foreground">Global Markets</span>
+                      </div>
+                      <Badge variant="outline" className="bg-green-500/10 text-green-500 hover:bg-green-500/10">
+                        24/7
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+        
+        {/* Market Summary Section */}
+        <section className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Market Summary</h2>
+            <Button variant="outline" onClick={() => navigate('/markets')}>
+              View All Markets
+            </Button>
+          </div>
+          
+          <Card>
+            <CardContent className="p-0">
+              <MarketSummary />
+            </CardContent>
+          </Card>
+        </section>
+        
+        {/* Top Gainers & Losers Section */}
+        <section className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Top Movers</h2>
+            <Tabs defaultValue="stocks">
+              <TabsList>
+                <TabsTrigger value="stocks">Stocks</TabsTrigger>
+                <TabsTrigger value="crypto">Crypto</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          
+          <TabsContent value="stocks" className="mt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <TrendingUp className="h-5 w-5 mr-2 text-success" />
+                    Top Gainers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {topGainersStocks.map((stock) => (
+                      <div 
+                        key={stock.symbol}
+                        className="flex justify-between items-center p-2 hover:bg-muted rounded-md cursor-pointer"
+                        onClick={() => navigate(`/trade/${stock.symbol}`)}
+                      >
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                            <span className="text-primary font-medium">{stock.symbol.charAt(0)}</span>
+                          </div>
+                          <div>
+                            <div className="font-medium">{stock.symbol}</div>
+                            <div className="text-sm text-muted-foreground">{stock.name}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div>₹{stock.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+                          <div className="text-success flex items-center">
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            {stock.changePercent.toFixed(2)}%
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <TrendingUp className="h-5 w-5 mr-2 text-destructive" transform="rotate(180)" />
+                    Top Losers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {topLosersStocks.map((stock) => (
+                      <div 
+                        key={stock.symbol}
+                        className="flex justify-between items-center p-2 hover:bg-muted rounded-md cursor-pointer"
+                        onClick={() => navigate(`/trade/${stock.symbol}`)}
+                      >
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                            <span className="text-primary font-medium">{stock.symbol.charAt(0)}</span>
+                          </div>
+                          <div>
+                            <div className="font-medium">{stock.symbol}</div>
+                            <div className="text-sm text-muted-foreground">{stock.name}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div>₹{stock.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+                          <div className="text-destructive flex items-center">
+                            <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
+                            {stock.changePercent.toFixed(2)}%
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="crypto" className="mt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <TrendingUp className="h-5 w-5 mr-2 text-success" />
+                    Top Crypto Gainers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {topGainersCrypto.map((crypto) => (
+                      <div 
+                        key={crypto.symbol}
+                        className="flex justify-between items-center p-2 hover:bg-muted rounded-md cursor-pointer"
+                        onClick={() => navigate(`/trade/${crypto.symbol}`)}
+                      >
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                            <span className="text-primary font-medium">{crypto.symbol.charAt(0)}</span>
+                          </div>
+                          <div>
+                            <div className="font-medium">{crypto.symbol}</div>
+                            <div className="text-sm text-muted-foreground">{crypto.name}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div>₹{crypto.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+                          <div className="text-success flex items-center">
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            {crypto.changePercent.toFixed(2)}%
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <TrendingUp className="h-5 w-5 mr-2 text-destructive" transform="rotate(180)" />
+                    Top Crypto Losers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {topLosersCrypto.map((crypto) => (
+                      <div 
+                        key={crypto.symbol}
+                        className="flex justify-between items-center p-2 hover:bg-muted rounded-md cursor-pointer"
+                        onClick={() => navigate(`/trade/${crypto.symbol}`)}
+                      >
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                            <span className="text-primary font-medium">{crypto.symbol.charAt(0)}</span>
+                          </div>
+                          <div>
+                            <div className="font-medium">{crypto.symbol}</div>
+                            <div className="text-sm text-muted-foreground">{crypto.name}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div>₹{crypto.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+                          <div className="text-destructive flex items-center">
+                            <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
+                            {crypto.changePercent.toFixed(2)}%
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </section>
+        
+        {/* Trending Assets Section */}
+        <section className="mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">Trending Assets</h2>
+            <Button variant="outline" onClick={() => navigate('/markets')}>
+              <ArrowRight className="h-4 w-4 mr-2" />
+              Explore Markets
+            </Button>
+          </div>
+          
+          <TrendingAssets />
+        </section>
+        
+        {/* Call to Action */}
+        <section className="mb-8">
+          <div className="rounded-xl bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5 p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+              <div>
+                <h2 className="text-3xl font-bold mb-4">Start Trading Today</h2>
+                <p className="text-muted-foreground mb-6">
+                  Join thousands of traders using TradePaisa to invest in stocks and cryptocurrencies with zero commission fees.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button size="lg" onClick={() => navigate('/paper-trading')}>
+                    Try Paper Trading
+                  </Button>
+                  <Button variant="outline" size="lg" onClick={() => navigate('/learn')}>
+                    Learn Trading Basics
+                  </Button>
+                </div>
+              </div>
+              <div className="flex justify-center">
+                <div className="max-w-xs">
+                  <img 
+                    src="/lovable-uploads/ee875c5a-4a74-4430-aad3-f52e67ef759a.png" 
+                    alt="Trading App" 
+                    className="w-full h-auto"
+                  />
+                </div>
               </div>
             </div>
           </div>
