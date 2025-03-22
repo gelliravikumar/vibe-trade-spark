@@ -127,15 +127,15 @@ const Trade = () => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
                 <Card className="p-3 bg-muted/30">
                   <div className="text-sm text-muted-foreground">Previous Close</div>
-                  <div className="font-medium">₹{currentAsset.previousPrice.toLocaleString()}</div>
+                  <div className="font-medium">₹{(currentAsset.previousPrice || 0).toLocaleString()}</div>
                 </Card>
                 <Card className="p-3 bg-muted/30">
                   <div className="text-sm text-muted-foreground">Day Range</div>
-                  <div className="font-medium">₹{(currentAsset.price * 0.98).toFixed(2)} - ₹{(currentAsset.price * 1.02).toFixed(2)}</div>
+                  <div className="font-medium">₹{((currentAsset.price || 0) * 0.98).toFixed(2)} - ₹{((currentAsset.price || 0) * 1.02).toFixed(2)}</div>
                 </Card>
                 <Card className="p-3 bg-muted/30">
                   <div className="text-sm text-muted-foreground">52 Week Range</div>
-                  <div className="font-medium">₹{(currentAsset.price * 0.8).toFixed(2)} - ₹{(currentAsset.price * 1.2).toFixed(2)}</div>
+                  <div className="font-medium">₹{((currentAsset.price || 0) * 0.8).toFixed(2)} - ₹{((currentAsset.price || 0) * 1.2).toFixed(2)}</div>
                 </Card>
                 <Card className="p-3 bg-muted/30">
                   <div className="text-sm text-muted-foreground">Volume</div>
@@ -193,7 +193,7 @@ const Trade = () => {
                 </div>
                 
                 <p className="text-sm text-muted-foreground mb-3">
-                  {currentAsset?.name} has shown a {currentAsset?.changePercent >= 0 ? 'positive' : 'negative'} trend today with {Math.abs(currentAsset?.changePercent || 0).toFixed(2)}% movement.
+                  {currentAsset?.name || 'This asset'} has shown a {currentAsset?.changePercent >= 0 ? 'positive' : 'negative'} trend today with {Math.abs(currentAsset?.changePercent || 0).toFixed(2)}% movement.
                 </p>
                 
                 <Button variant="outline" size="sm" className="w-full flex items-center justify-center">
