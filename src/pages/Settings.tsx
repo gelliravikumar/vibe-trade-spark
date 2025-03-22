@@ -1,17 +1,36 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { DataSourceSelector } from '@/components/ui/DataSourceSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Bell, Zap, Lock } from 'lucide-react';
+import { User, Bell, Zap, Lock, Palette, MonitorSmartphone } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const Settings = () => {
+  const [selectedTheme, setSelectedTheme] = useState<string>('system');
+  const [savedTheme, setSavedTheme] = useState<string>('system');
+  const [accent, setAccent] = useState<string>('blue');
+  
+  const handleThemeChange = (value: string) => {
+    setSelectedTheme(value);
+  };
+  
+  const saveThemeSettings = () => {
+    setSavedTheme(selectedTheme);
+    localStorage.setItem('tradingApp_theme', selectedTheme);
+    localStorage.setItem('tradingApp_accent', accent);
+    // Apply theme - in a real app we would use a theme context
+    document.documentElement.setAttribute('data-theme', selectedTheme);
+  };
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      <main className="flex-grow pt-24 pb-16 px-4">
+      <main className="flex-grow pt-20 pb-16 px-4">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-6">Settings</h1>
           
@@ -21,6 +40,10 @@ const Settings = () => {
                 <TabsTrigger value="data-sources" className="flex items-center gap-1.5">
                   <Zap className="w-4 h-4" />
                   Data Sources
+                </TabsTrigger>
+                <TabsTrigger value="appearance" className="flex items-center gap-1.5">
+                  <Palette className="w-4 h-4" />
+                  Appearance
                 </TabsTrigger>
                 <TabsTrigger value="profile" className="flex items-center gap-1.5">
                   <User className="w-4 h-4" />
@@ -72,6 +95,93 @@ const Settings = () => {
                         Note: For demonstration purposes, you can toggle between dummy data and simulated real-time data. 
                         In a production environment, you would need to provide API keys for these services.
                       </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="appearance" className="mt-0">
+              <div className="glass-card rounded-lg p-6">
+                <h2 className="text-xl font-semibold mb-6">Appearance Settings</h2>
+                
+                <div className="max-w-lg mx-auto">
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Theme</h3>
+                      
+                      <RadioGroup value={selectedTheme} onValueChange={handleThemeChange} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <RadioGroupItem value="light" id="light" className="peer sr-only" />
+                          <Label
+                            htmlFor="light"
+                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-gray-100 hover:border-accent peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                          >
+                            <MonitorSmartphone className="mb-3 h-6 w-6" />
+                            <span className="text-sm font-medium">Light</span>
+                          </Label>
+                        </div>
+                        
+                        <div>
+                          <RadioGroupItem value="dark" id="dark" className="peer sr-only" />
+                          <Label
+                            htmlFor="dark"
+                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-slate-900 text-white p-4 hover:bg-slate-800 hover:border-accent peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                          >
+                            <MonitorSmartphone className="mb-3 h-6 w-6" />
+                            <span className="text-sm font-medium">Dark</span>
+                          </Label>
+                        </div>
+                        
+                        <div>
+                          <RadioGroupItem value="system" id="system" className="peer sr-only" />
+                          <Label
+                            htmlFor="system"
+                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-gradient-to-br from-white to-slate-900 p-4 hover:bg-gray-100 hover:border-accent peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                          >
+                            <MonitorSmartphone className="mb-3 h-6 w-6" />
+                            <span className="text-sm font-medium">System</span>
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Color Accents</h3>
+                      
+                      <div className="grid grid-cols-5 gap-2">
+                        {['blue', 'purple', 'green', 'orange', 'pink'].map((color) => (
+                          <button 
+                            key={color}
+                            onClick={() => setAccent(color)}
+                            className={`w-10 h-10 rounded-full ${getColorClass(color)} ${accent === color ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Chart Settings</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="default-chart-type">Default to TradingView charts</Label>
+                          <Switch id="default-chart-type" defaultChecked />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="show-indicators">Show technical indicators by default</Label>
+                          <Switch id="show-indicators" defaultChecked={false} />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="persistent-drawings">Remember chart drawings</Label>
+                          <Switch id="persistent-drawings" defaultChecked />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <button className="btn-primary" onClick={saveThemeSettings}>
+                        Save Appearance Settings
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -161,11 +271,7 @@ const Settings = () => {
                           Get notified when assets hit your target price
                         </p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only" defaultChecked />
-                        <div className="w-11 h-6 bg-muted rounded-full peer-checked:bg-primary"></div>
-                        <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:left-6"></span>
-                      </label>
+                      <Switch id="price-alerts" defaultChecked />
                     </div>
                     
                     <div className="flex items-center justify-between">
@@ -175,11 +281,7 @@ const Settings = () => {
                           Daily digest of market news and updates
                         </p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only" defaultChecked />
-                        <div className="w-11 h-6 bg-muted rounded-full peer-checked:bg-primary"></div>
-                        <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:left-6"></span>
-                      </label>
+                      <Switch id="market-news" defaultChecked />
                     </div>
                     
                     <div className="flex items-center justify-between">
@@ -189,11 +291,7 @@ const Settings = () => {
                           Receive notifications for completed trades
                         </p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only" defaultChecked />
-                        <div className="w-11 h-6 bg-muted rounded-full peer-checked:bg-primary"></div>
-                        <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:left-6"></span>
-                      </label>
+                      <Switch id="trade-confirmations" defaultChecked />
                     </div>
                     
                     <div className="flex items-center justify-between">
@@ -203,11 +301,7 @@ const Settings = () => {
                           Promotions, features, and updates
                         </p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only" />
-                        <div className="w-11 h-6 bg-muted rounded-full peer-checked:bg-primary"></div>
-                        <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:left-6"></span>
-                      </label>
+                      <Switch id="marketing" defaultChecked={false} />
                     </div>
                     
                     <div className="pt-4">
@@ -309,5 +403,17 @@ const Settings = () => {
     </div>
   );
 };
+
+// Helper function to get color class for accent buttons
+function getColorClass(color: string): string {
+  switch (color) {
+    case 'blue': return 'bg-blue-500';
+    case 'purple': return 'bg-purple-500';
+    case 'green': return 'bg-green-500';
+    case 'orange': return 'bg-orange-500';
+    case 'pink': return 'bg-pink-500';
+    default: return 'bg-blue-500';
+  }
+}
 
 export default Settings;

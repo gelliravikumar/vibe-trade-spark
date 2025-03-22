@@ -81,12 +81,17 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
     // Add ESC key handler when in fullscreen mode
     if (isFullscreen) {
       document.addEventListener('keydown', handleEscKey);
+      // When entering fullscreen, add a class to body to prevent scrolling
+      document.body.style.overflow = 'hidden';
     } else {
       document.removeEventListener('keydown', handleEscKey);
+      // When exiting fullscreen, restore scrolling
+      document.body.style.overflow = '';
     }
     
     return () => {
       document.removeEventListener('keydown', handleEscKey);
+      document.body.style.overflow = '';
     };
   }, [isFullscreen]);
   
@@ -145,11 +150,12 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
         { text: '1W', resolution: '1W' },
         { text: '1M', resolution: '1M' }
       ],
+      fullscreen: isFullscreen
     });
   };
 
   return (
-    <div className={`relative ${isFullscreen ? 'fixed inset-0 z-50 bg-background' : ''}`}>
+    <div className={`relative ${isFullscreen ? 'fixed inset-0 z-50 bg-background pt-16' : ''}`}>
       {/* Chart controls */}
       <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
         <div className="flex bg-secondary/80 backdrop-blur-sm rounded-md">
@@ -189,8 +195,8 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
       <div 
         id={`tradingview_chart_${symbol.toLowerCase().replace(/[^a-z0-9]/g, '')}`} 
         ref={containerRef} 
-        style={{ height: isFullscreen ? '100vh' : height, width: isFullscreen ? '100vw' : width }}
-        className={`rounded-lg overflow-hidden ${isFullscreen ? 'p-4' : ''}`}
+        style={{ height: isFullscreen ? 'calc(100vh - 64px)' : height, width: isFullscreen ? '100vw' : width }}
+        className={`rounded-lg overflow-hidden ${isFullscreen ? '' : ''}`}
       />
     </div>
   );

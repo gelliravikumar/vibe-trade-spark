@@ -53,6 +53,36 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
+  /* Blue theme */
+  [data-theme="blue"] {
+    --primary: 214 90% 52%;
+    --primary-foreground: 210 40% 98%;
+  }
+
+  /* Purple theme */
+  [data-theme="purple"] {
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 40% 98%;
+  }
+
+  /* Green theme */
+  [data-theme="green"] {
+    --primary: 142 71% 45%;
+    --primary-foreground: 210 40% 98%;
+  }
+
+  /* Orange theme */
+  [data-theme="orange"] {
+    --primary: 24 94% 50%;
+    --primary-foreground: 210 40% 98%;
+  }
+
+  /* Pink theme */
+  [data-theme="pink"] {
+    --primary: 330 86% 65%;
+    --primary-foreground: 210 40% 98%;
+  }
+
   .dark {
     --background: 214 60% 4%;
     --foreground: 210 40% 98%;
@@ -118,6 +148,12 @@
 }
 
 @layer components {
+  .container-fluid {
+    width: 100%;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
   .glass-card {
     @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-700/30 shadow-sm;
   }
@@ -288,4 +324,46 @@
 @keyframes flash-red {
   0% { background-color: rgba(239, 68, 68, 0.2); }
   100% { background-color: transparent; }
+}
+
+/* Theme color classes */
+.accent-blue .accent-color {
+  @apply text-blue-600 dark:text-blue-400;
+}
+
+.accent-purple .accent-color {
+  @apply text-purple-600 dark:text-purple-400;
+}
+
+.accent-green .accent-color {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.accent-orange .accent-color {
+  @apply text-orange-600 dark:text-orange-400;
+}
+
+.accent-pink .accent-color {
+  @apply text-pink-600 dark:text-pink-400;
+}
+
+/* Professional gradient backgrounds */
+.bg-gradient-professional-1 {
+  background: linear-gradient(to right, #243949 0%, #517fa4 100%);
+}
+
+.bg-gradient-professional-2 {
+  background: linear-gradient(to top, #e6e9f0 0%, #eef1f5 100%);
+}
+
+.bg-gradient-professional-3 {
+  background: linear-gradient(90deg, hsla(221, 45%, 73%, 1) 0%, hsla(220, 78%, 29%, 1) 100%);
+}
+
+.bg-gradient-professional-4 {
+  background: linear-gradient(90deg, hsla(46, 73%, 75%, 1) 0%, hsla(176, 73%, 88%, 1) 100%);
+}
+
+.bg-gradient-professional-5 {
+  background: linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%);
 }

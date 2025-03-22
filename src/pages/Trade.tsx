@@ -36,12 +36,18 @@ const Trade = () => {
         const apiProvider = localStorage.getItem('tradingApp_apiProvider');
         const connectionMethod = localStorage.getItem('tradingApp_connectionMethod');
         const useDummyData = localStorage.getItem('tradingApp_useDummyData');
+        const theme = localStorage.getItem('tradingApp_theme');
         
         // Check if we have valid settings
         if (apiProvider && connectionMethod && useDummyData !== null) {
           console.log('Loaded settings from localStorage');
         } else {
           console.log('No stored settings found, using defaults');
+        }
+
+        // Apply theme if saved
+        if (theme) {
+          document.documentElement.setAttribute('data-theme', theme);
         }
       } catch (error) {
         console.error('Error loading settings from localStorage:', error);
@@ -90,11 +96,11 @@ const Trade = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
-      <main className="flex-grow pt-20 pb-16">
-        <div className="max-w-7xl mx-auto px-4">
+      <main className="flex-grow pt-16 pb-16 w-full">
+        <div className="container-fluid px-4 mx-auto max-w-[1920px]">
           {/* Page header with asset info */}
           {currentAsset && (
-            <div className="glass-panel rounded-lg p-6 mb-6">
+            <div className="glass-panel rounded-lg p-4 md:p-6 mb-4 md:mb-6">
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center mb-2">
@@ -102,7 +108,7 @@ const Trade = () => {
                       <span className="text-primary font-medium">{currentAsset.symbol.charAt(0)}</span>
                     </div>
                     <div>
-                      <h1 className="text-2xl font-bold">{currentAsset.name}</h1>
+                      <h1 className="text-xl md:text-2xl font-bold">{currentAsset.name}</h1>
                       <div className="flex items-center">
                         <span className="text-muted-foreground mr-2">{currentAsset.symbol}</span>
                         <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">{currentAsset.type}</span>
@@ -112,7 +118,7 @@ const Trade = () => {
                 </div>
                 
                 <div className="text-right">
-                  <div className="text-2xl font-bold">₹{currentAsset.price.toLocaleString()}</div>
+                  <div className="text-xl md:text-2xl font-bold">₹{currentAsset.price.toLocaleString()}</div>
                   <div className={`flex items-center justify-end ${currentAsset.changePercent >= 0 ? 'text-success' : 'text-destructive'}`}>
                     {currentAsset.changePercent >= 0 ? (
                       <TrendingUp className="h-4 w-4 mr-1" />
@@ -124,7 +130,7 @@ const Trade = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mt-4 md:mt-6">
                 <Card className="p-3 bg-muted/30">
                   <div className="text-sm text-muted-foreground">Previous Close</div>
                   <div className="font-medium">₹{(currentAsset.previousPrice || 0).toLocaleString()}</div>
@@ -145,12 +151,12 @@ const Trade = () => {
             </div>
           )}
           
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
             <div className="lg:col-span-3">
               <TradingTerminal symbol={symbol} />
             </div>
             
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {/* Recent Trades */}
               <Card className="p-4">
                 <div className="flex justify-between items-center mb-3">
