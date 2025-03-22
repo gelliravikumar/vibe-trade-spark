@@ -27,7 +27,7 @@ import {
   Filter, 
   Search, 
   FileSpreadsheet,
-  FilePdf,
+  File,
   DownloadCloud,
   Mail,
   Printer,
@@ -39,6 +39,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from 'sonner';
+import { Separator } from '@/components/ui/separator';
 
 // Sample tax statements
 const taxStatements = [
@@ -233,7 +234,7 @@ const TaxDocuments = () => {
                   Tax Statements
                 </TabsTrigger>
                 <TabsTrigger value="forms" className="flex items-center gap-1">
-                  <FilePdf className="h-4 w-4" />
+                  <File className="h-4 w-4" />
                   Tax Forms
                 </TabsTrigger>
                 <TabsTrigger value="calculator" className="flex items-center gap-1">
@@ -548,7 +549,7 @@ const TaxDocuments = () => {
                               <SelectValue placeholder="Select holding period" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="long_term">Long Term (>1 year for equity, >3 years for others)</SelectItem>
+                              <SelectItem value="long_term">Long Term ({'>'}1 year for equity, {'>'}3 years for others)</SelectItem>
                               <SelectItem value="short_term">Short Term</SelectItem>
                             </SelectContent>
                           </Select>
