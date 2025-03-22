@@ -62,7 +62,7 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
   };
 
   const navigateToSettings = () => {
-    navigate('/settings');
+    navigate('/settings?tab=data');
   };
   
   if (!symbol) {
@@ -88,11 +88,6 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
                     Table View
                   </TabsTrigger>
                 </TabsList>
-                
-                <Button variant="outline" size="sm" onClick={navigateToSettings} className="flex items-center gap-2">
-                  <SettingsIcon size={16} />
-                  <span>Data Settings</span>
-                </Button>
               </div>
               
               <TabsContent value="cards">
@@ -164,42 +159,12 @@ export const TradingTerminal: React.FC<TradingTerminalProps> = ({ symbol }) => {
   return (
     <div className="w-full mx-auto px-0 sm:px-0 pt-0 pb-0">
       <div className="space-y-4 md:space-y-6">
-        <div className="glass-card rounded-lg p-5">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Price Chart</h2>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="advanced-chart"
-                  checked={useAdvancedChart}
-                  onCheckedChange={setUseAdvancedChart}
-                />
-                <Label htmlFor="advanced-chart">TradingView Chart</Label>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={navigateToSettings}
-                className="flex items-center gap-2"
-              >
-                <SettingsIcon size={16} />
-                <span className="hidden md:inline">Settings</span>
-              </Button>
-            </div>
-          </div>
-          
-          {useAdvancedChart ? (
-            <TradingViewChart 
-              symbol={asset.symbol} 
-              type={asset.type} 
-              height={500}
-            />
-          ) : (
-            <DetailedChart 
-              data={chartData} 
-              height={500}
-            />
-          )}
+        <div className="glass-card rounded-lg">
+          <TradingViewChart 
+            symbol={asset.symbol} 
+            type={asset.type} 
+            height={500}
+          />
         </div>
         
         <Tabs defaultValue="info" className="w-full">

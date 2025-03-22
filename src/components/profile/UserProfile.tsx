@@ -1,6 +1,10 @@
 
 import React, { useState } from 'react';
-import { User, Settings, LogOut, CreditCard, FileText, Bell, HelpCircle, Wallet } from 'lucide-react';
+import { 
+  User, Settings, LogOut, CreditCard, FileText, Bell, HelpCircle, 
+  Wallet, Building, Home, ChevronRight, Database, BarChart3, Book,
+  UserPlus, Shield, Briefcase, Clipboard, Heart
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,10 +12,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 
 export interface UserProfileData {
   name: string;
@@ -32,6 +43,9 @@ const mockUserData: UserProfileData = {
 
 export const UserProfile = () => {
   const [userData, setUserData] = useState<UserProfileData>(mockUserData);
+  const [activeTheme, setActiveTheme] = useState(() => {
+    return localStorage.getItem('tradingApp_theme') || 'system';
+  });
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -43,11 +57,12 @@ export const UserProfile = () => {
   };
 
   const handleBankingSettings = () => {
-    toast.info("Banking settings would open here");
+    navigate('/settings?tab=payment');
   };
 
   const handleTaxForms = () => {
-    toast.info("Tax forms would open here");
+    navigate('/settings?tab=documents');
+    toast.info("Tax documents section");
   };
 
   const handleSettings = () => {
@@ -61,10 +76,30 @@ export const UserProfile = () => {
   
   const handleSupport = () => {
     toast.info("Opening support center");
+    window.open("https://support.tradesmart.com", "_blank");
   };
   
   const handlePortfolio = () => {
     navigate('/portfolio');
+  };
+  
+  const handleInviteFriend = () => {
+    toast.info("Invite a friend feature coming soon!");
+  };
+  
+  const handleReferrals = () => {
+    toast.info("View your referrals feature coming soon!");
+  };
+  
+  const handleChangeTheme = (theme: string) => {
+    localStorage.setItem('tradingApp_theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+    setActiveTheme(theme);
+    toast.success(`Theme changed to ${theme}`);
+  };
+  
+  const handleDataSettings = () => {
+    navigate('/settings?tab=data');
   };
 
   return (
@@ -78,65 +113,156 @@ export const UserProfile = () => {
             </AvatarFallback>
           </Avatar>
           {userData.notifications && userData.notifications > 0 && (
-            <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-destructive"></span>
+            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive flex items-center justify-center text-[10px] text-white font-bold">
+              {userData.notifications}
+            </span>
           )}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64" align="end">
-        <DropdownMenuLabel>
+      <DropdownMenuContent className="w-72" align="end">
+        <DropdownMenuLabel className="p-4">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">{userData.name}</p>
+            <p className="text-base font-medium">{userData.name}</p>
             <p className="text-xs text-muted-foreground">{userData.email}</p>
-            <p className="text-xs font-semibold mt-1">
-              Balance: ₹{userData.balance.toLocaleString('en-IN')}
-            </p>
+            <div className="mt-2 py-1 px-3 bg-muted/50 rounded-md">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium">Available Balance</span>
+                <span className="text-xs text-primary">(View Details)</span>
+              </div>
+              <p className="text-base font-semibold mt-1">
+                ₹{userData.balance.toLocaleString('en-IN')}
+              </p>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <button 
+                className="flex-1 text-xs py-1 bg-primary text-primary-foreground rounded-md"
+                onClick={() => navigate('/deposit')}
+              >
+                Deposit
+              </button>
+              <button 
+                className="flex-1 text-xs py-1 bg-muted text-foreground rounded-md border"
+                onClick={() => navigate('/withdraw')}
+              >
+                Withdraw
+              </button>
+            </div>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem onClick={handleEditProfile} className="cursor-pointer">
-          <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={handlePortfolio} className="cursor-pointer">
-          <Wallet className="mr-2 h-4 w-4" />
-          <span>My Portfolio</span>
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={handleBankingSettings} className="cursor-pointer">
-          <CreditCard className="mr-2 h-4 w-4" />
-          <span>Banking Details</span>
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={handleNotifications} className="cursor-pointer relative">
-          <Bell className="mr-2 h-4 w-4" />
-          <span>Notifications</span>
-          {userData.notifications && userData.notifications > 0 && (
-            <span className="ml-auto bg-destructive text-white text-xs rounded-full px-1.5 py-0.5">
-              {userData.notifications}
-            </span>
-          )}
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={handleTaxForms} className="cursor-pointer">
-          <FileText className="mr-2 h-4 w-4" />
-          <span>Tax Forms</span>
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={handleSupport} className="cursor-pointer">
-          <HelpCircle className="mr-2 h-4 w-4" />
-          <span>Help & Support</span>
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={handleSettings} className="cursor-pointer">
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={handleEditProfile} className="cursor-pointer">
+            <User className="mr-2 h-4 w-4" />
+            <span>Profile</span>
+            <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={handlePortfolio} className="cursor-pointer">
+            <Wallet className="mr-2 h-4 w-4" />
+            <span>My Portfolio</span>
+            <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={handleBankingSettings} className="cursor-pointer">
+            <CreditCard className="mr-2 h-4 w-4" />
+            <span>Banking Details</span>
+            <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={handleNotifications} className="cursor-pointer relative">
+            <Bell className="mr-2 h-4 w-4" />
+            <span>Notifications</span>
+            {userData.notifications && userData.notifications > 0 && (
+              <Badge variant="destructive" className="ml-auto">
+                {userData.notifications}
+              </Badge>
+            )}
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => navigate('/markets')} className="cursor-pointer">
+            <BarChart3 className="mr-2 h-4 w-4" />
+            <span>Markets</span>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={() => navigate('/paper-trading')} className="cursor-pointer">
+            <Clipboard className="mr-2 h-4 w-4" />
+            <span>Paper Trading</span>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={() => navigate('/watchlist')} className="cursor-pointer">
+            <Heart className="mr-2 h-4 w-4" />
+            <span>Watchlists</span>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={() => navigate('/learn')} className="cursor-pointer">
+            <Book className="mr-2 h-4 w-4" />
+            <span>Learn & Resources</span>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={handleTaxForms} className="cursor-pointer">
+            <FileText className="mr-2 h-4 w-4" />
+            <span>Tax Documents</span>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={handleSupport} className="cursor-pointer">
+            <HelpCircle className="mr-2 h-4 w-4" />
+            <span>Help & Support</span>
+          </DropdownMenuItem>
+          
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="cursor-pointer">
+              <UserPlus className="mr-2 h-4 w-4" />
+              <span>Refer & Earn</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuItem onClick={handleInviteFriend}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Invite Friends
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleReferrals}>
+                <Building className="mr-2 h-4 w-4" />
+                My Referrals
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Theme</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup value={activeTheme} onValueChange={handleChangeTheme}>
+                <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          
+          <DropdownMenuItem onClick={handleDataSettings} className="cursor-pointer">
+            <Database className="mr-2 h-4 w-4" />
+            <span>Data Settings</span>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={handleSettings} className="cursor-pointer">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>All Settings</span>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

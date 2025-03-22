@@ -1,274 +1,198 @@
-
 import React, { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { DataSourceSelector } from '@/components/ui/DataSourceSelector';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Bell, Zap, Lock, Palette, MonitorSmartphone } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useToast } from "@/components/ui/use-toast";
+import { 
+  User, Bell, CreditCard, Shield, KeyRound, MonitorSmartphone, 
+  PaintBucket, FileText, Database, Terminal 
+} from 'lucide-react';
+import { useData } from '@/context/DataContext';
+import { ApiProvider, ConnectionMethod } from '@/data/api';
 
 const Settings = () => {
-  const [selectedTheme, setSelectedTheme] = useState<string>('system');
-  const [savedTheme, setSavedTheme] = useState<string>('system');
-  const [accent, setAccent] = useState<string>('blue');
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("profile");
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('tradingApp_theme') || 'system';
+  });
+  const [accentColor, setAccentColor] = useState(() => {
+    return localStorage.getItem('tradingApp_accentColor') || 'blue';
+  });
   
-  const handleThemeChange = (value: string) => {
-    setSelectedTheme(value);
+  const { 
+    apiProvider, 
+    connectionMethod, 
+    useDummyData, 
+    connectionStatus,
+    setApiProvider, 
+    setConnectionMethod, 
+    setUseDummyData, 
+    refreshData 
+  } = useData();
+
+  const handleSaveSettings = () => {
+    localStorage.setItem('tradingApp_theme', theme);
+    localStorage.setItem('tradingApp_accentColor', accentColor);
+    
+    document.documentElement.setAttribute('data-theme', theme === 'system' ? 
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : 
+      theme
+    );
+    
+    document.documentElement.className = document.documentElement.className
+      .replace(/accent-(blue|purple|green|orange|pink)/g, '')
+      .trim();
+    document.documentElement.classList.add(`accent-${accentColor}`);
+    
+    toast({
+      title: "Settings saved",
+      description: "Your preferences have been updated.",
+    });
   };
-  
-  const saveThemeSettings = () => {
-    setSavedTheme(selectedTheme);
-    localStorage.setItem('tradingApp_theme', selectedTheme);
-    localStorage.setItem('tradingApp_accent', accent);
-    // Apply theme - in a real app we would use a theme context
-    document.documentElement.setAttribute('data-theme', selectedTheme);
+
+  const handleApiProviderChange = (value: string) => {
+    setApiProvider(value as ApiProvider);
+    localStorage.setItem('tradingApp_apiProvider', value);
   };
-  
+
+  const handleConnectionMethodChange = (value: string) => {
+    setConnectionMethod(value as ConnectionMethod);
+    localStorage.setItem('tradingApp_connectionMethod', value);
+  };
+
+  const handleUseDummyDataChange = (checked: boolean) => {
+    setUseDummyData(checked);
+    localStorage.setItem('tradingApp_useDummyData', String(checked));
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', value);
+    window.history.pushState({}, '', url);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      
-      <main className="flex-grow pt-20 pb-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6">Settings</h1>
+      <div className="flex-grow container py-8">
+        <div className="flex flex-col md:flex-row gap-8">
+          <aside className="md:w-64">
+            <Card>
+              <CardContent className="p-4">
+                <Tabs 
+                  defaultValue={activeTab} 
+                  orientation="vertical" 
+                  onValueChange={handleTabChange}
+                  className="w-full"
+                >
+                  <TabsList className="flex flex-col h-auto items-stretch gap-1">
+                    <TabsTrigger value="profile" className="justify-start">
+                      <User className="w-4 h-4 mr-2" />
+                      Profile
+                    </TabsTrigger>
+                    <TabsTrigger value="notifications" className="justify-start">
+                      <Bell className="w-4 h-4 mr-2" />
+                      Notifications
+                    </TabsTrigger>
+                    <TabsTrigger value="payment" className="justify-start">
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Payment
+                    </TabsTrigger>
+                    <TabsTrigger value="security" className="justify-start">
+                      <Shield className="w-4 h-4 mr-2" />
+                      Security
+                    </TabsTrigger>
+                    <TabsTrigger value="api" className="justify-start">
+                      <KeyRound className="w-4 h-4 mr-2" />
+                      API Keys
+                    </TabsTrigger>
+                    <TabsTrigger value="appearance" className="justify-start">
+                      <PaintBucket className="w-4 h-4 mr-2" />
+                      Appearance
+                    </TabsTrigger>
+                    <TabsTrigger value="devices" className="justify-start">
+                      <MonitorSmartphone className="w-4 h-4 mr-2" />
+                      Devices
+                    </TabsTrigger>
+                    <TabsTrigger value="data" className="justify-start">
+                      <Database className="w-4 h-4 mr-2" />
+                      Data Settings
+                    </TabsTrigger>
+                    <TabsTrigger value="dev" className="justify-start">
+                      <Terminal className="w-4 h-4 mr-2" />
+                      Developer
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </aside>
           
-          <Tabs defaultValue="data-sources">
-            <div className="flex mb-6 overflow-x-auto pb-2">
-              <TabsList>
-                <TabsTrigger value="data-sources" className="flex items-center gap-1.5">
-                  <Zap className="w-4 h-4" />
-                  Data Sources
-                </TabsTrigger>
-                <TabsTrigger value="appearance" className="flex items-center gap-1.5">
-                  <Palette className="w-4 h-4" />
-                  Appearance
-                </TabsTrigger>
-                <TabsTrigger value="profile" className="flex items-center gap-1.5">
-                  <User className="w-4 h-4" />
-                  Profile
-                </TabsTrigger>
-                <TabsTrigger value="notifications" className="flex items-center gap-1.5">
-                  <Bell className="w-4 h-4" />
-                  Notifications
-                </TabsTrigger>
-                <TabsTrigger value="security" className="flex items-center gap-1.5">
-                  <Lock className="w-4 h-4" />
-                  Security
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            
-            <TabsContent value="data-sources" className="mt-0">
-              <div className="glass-card rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-6">Market Data Configuration</h2>
-                
-                <div className="max-w-lg mx-auto">
-                  <DataSourceSelector />
-                  
-                  <div className="mt-8 space-y-4">
-                    <h3 className="text-lg font-medium">Supported API Providers</h3>
-                    
-                    <div className="space-y-4">
-                      <div className="p-4 rounded-lg border border-border">
-                        <h4 className="font-medium">Indian Stock Market APIs</h4>
-                        <ul className="mt-2 space-y-1 text-sm">
-                          <li>NSE India REST API - Stock quotes</li>
-                          <li>BSE India REST API - OHLC data</li>
-                          <li>Alpha Vantage API - Limited Free</li>
-                        </ul>
-                      </div>
-                      
-                      <div className="p-4 rounded-lg border border-border">
-                        <h4 className="font-medium">Cryptocurrency Market APIs</h4>
-                        <ul className="mt-2 space-y-1 text-sm">
-                          <li>Binance REST API & WebSocket API</li>
-                          <li>CoinGecko REST API</li>
-                          <li>Coinbase REST API & WebSocket API</li>
-                        </ul>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-secondary/50 p-4 rounded-lg mt-4">
-                      <p className="text-sm text-muted-foreground">
-                        Note: For demonstration purposes, you can toggle between dummy data and simulated real-time data. 
-                        In a production environment, you would need to provide API keys for these services.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="appearance" className="mt-0">
-              <div className="glass-card rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-6">Appearance Settings</h2>
-                
-                <div className="max-w-lg mx-auto">
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">Theme</h3>
-                      
-                      <RadioGroup value={selectedTheme} onValueChange={handleThemeChange} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <RadioGroupItem value="light" id="light" className="peer sr-only" />
-                          <Label
-                            htmlFor="light"
-                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-gray-100 hover:border-accent peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                          >
-                            <MonitorSmartphone className="mb-3 h-6 w-6" />
-                            <span className="text-sm font-medium">Light</span>
-                          </Label>
-                        </div>
-                        
-                        <div>
-                          <RadioGroupItem value="dark" id="dark" className="peer sr-only" />
-                          <Label
-                            htmlFor="dark"
-                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-slate-900 text-white p-4 hover:bg-slate-800 hover:border-accent peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                          >
-                            <MonitorSmartphone className="mb-3 h-6 w-6" />
-                            <span className="text-sm font-medium">Dark</span>
-                          </Label>
-                        </div>
-                        
-                        <div>
-                          <RadioGroupItem value="system" id="system" className="peer sr-only" />
-                          <Label
-                            htmlFor="system"
-                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-gradient-to-br from-white to-slate-900 p-4 hover:bg-gray-100 hover:border-accent peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                          >
-                            <MonitorSmartphone className="mb-3 h-6 w-6" />
-                            <span className="text-sm font-medium">System</span>
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">Color Accents</h3>
-                      
-                      <div className="grid grid-cols-5 gap-2">
-                        {['blue', 'purple', 'green', 'orange', 'pink'].map((color) => (
-                          <button 
-                            key={color}
-                            onClick={() => setAccent(color)}
-                            className={`w-10 h-10 rounded-full ${getColorClass(color)} ${accent === color ? 'ring-2 ring-primary ring-offset-2' : ''}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">Chart Settings</h3>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="default-chart-type">Default to TradingView charts</Label>
-                          <Switch id="default-chart-type" defaultChecked />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="show-indicators">Show technical indicators by default</Label>
-                          <Switch id="show-indicators" defaultChecked={false} />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="persistent-drawings">Remember chart drawings</Label>
-                          <Switch id="persistent-drawings" defaultChecked />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-4">
-                      <button className="btn-primary" onClick={saveThemeSettings}>
-                        Save Appearance Settings
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-            
+          <div className="flex-1 space-y-6">
             <TabsContent value="profile" className="mt-0">
-              <div className="glass-card rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-6">Profile Settings</h2>
-                
-                <div className="max-w-lg mx-auto">
-                  <div className="flex flex-col items-center mb-6">
-                    <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                      <User className="w-12 h-12 text-primary" />
+              <Card>
+                <CardHeader>
+                  <CardTitle>Profile</CardTitle>
+                  <CardDescription>
+                    Manage your personal information and profile settings.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Name</Label>
+                      <Input id="name" defaultValue="Aarav Sharma" />
                     </div>
-                    <button className="text-sm text-primary">
-                      Change Profile Picture
-                    </button>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" type="email" defaultValue="aarav.sharma@example.com" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input id="phone" type="tel" defaultValue="+91 98765 43210" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dob">Date of Birth</Label>
+                      <Input id="dob" type="date" defaultValue="1990-01-01" />
+                    </div>
                   </div>
                   
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          First Name
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full rounded-md border border-input bg-background px-3 py-2"
-                          defaultValue="Demo"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Last Name
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full rounded-md border border-input bg-background px-3 py-2"
-                          defaultValue="User"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        className="w-full rounded-md border border-input bg-background px-3 py-2"
-                        defaultValue="demo@example.com"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        className="w-full rounded-md border border-input bg-background px-3 py-2"
-                        defaultValue="+91 98765 43210"
-                      />
-                    </div>
-                    
-                    <div className="pt-4">
-                      <button className="btn-primary">
-                        Save Changes
-                      </button>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input id="address" defaultValue="123 Main St, Mumbai, Maharashtra" />
                   </div>
-                </div>
-              </div>
+                  
+                  <div className="flex justify-end">
+                    <Button>Save Profile</Button>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
             
             <TabsContent value="notifications" className="mt-0">
-              <div className="glass-card rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-6">Notification Preferences</h2>
-                
-                <div className="max-w-lg mx-auto">
-                  <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notifications</CardTitle>
+                  <CardDescription>
+                    Manage how you receive notifications and alerts.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-medium">Price Alerts</h3>
+                        <Label htmlFor="price-alerts">Price Alerts</Label>
                         <p className="text-sm text-muted-foreground">
-                          Get notified when assets hit your target price
+                          Receive alerts when stocks hit your price targets
                         </p>
                       </div>
                       <Switch id="price-alerts" defaultChecked />
@@ -276,144 +200,273 @@ const Settings = () => {
                     
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-medium">Market News</h3>
+                        <Label htmlFor="market-updates">Market Updates</Label>
                         <p className="text-sm text-muted-foreground">
-                          Daily digest of market news and updates
+                          Daily market opening and closing updates
                         </p>
                       </div>
-                      <Switch id="market-news" defaultChecked />
+                      <Switch id="market-updates" defaultChecked />
                     </div>
                     
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-medium">Trade Confirmations</h3>
+                        <Label htmlFor="trade-notifications">Trade Notifications</Label>
                         <p className="text-sm text-muted-foreground">
-                          Receive notifications for completed trades
+                          Get notified when your trades are executed
                         </p>
                       </div>
-                      <Switch id="trade-confirmations" defaultChecked />
+                      <Switch id="trade-notifications" defaultChecked />
                     </div>
                     
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-medium">Marketing Communications</h3>
+                        <Label htmlFor="news-alerts">News Alerts</Label>
                         <p className="text-sm text-muted-foreground">
-                          Promotions, features, and updates
+                          Breaking news about companies in your portfolio
                         </p>
                       </div>
-                      <Switch id="marketing" defaultChecked={false} />
-                    </div>
-                    
-                    <div className="pt-4">
-                      <button className="btn-primary">
-                        Save Preferences
-                      </button>
+                      <Switch id="news-alerts" defaultChecked />
                     </div>
                   </div>
-                </div>
-              </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Notification Method</Label>
+                    <RadioGroup defaultValue="all">
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="all" id="all" />
+                        <Label htmlFor="all">All methods (Email, SMS, Push)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="email" id="email" />
+                        <Label htmlFor="email">Email only</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="push" id="push" />
+                        <Label htmlFor="push">Push notifications only</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <Button>Save Preferences</Button>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
             
-            <TabsContent value="security" className="mt-0">
-              <div className="glass-card rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-6">Security Settings</h2>
-                
-                <div className="max-w-lg mx-auto">
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="font-medium mb-4">Change Password</h3>
+            <TabsContent value="data" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Data Settings</CardTitle>
+                  <CardDescription>
+                    Configure your data sources and connection preferences.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex justify-between items-center p-4 rounded-md border">
+                      <div>
+                        <Label htmlFor="use-dummy-data" className="text-base font-medium">Use Demo Data</Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Use demo data for testing and exploration purposes. 
+                          Turn this off to connect to real market data sources.
+                        </p>
+                      </div>
+                      <Switch
+                        id="use-dummy-data"
+                        checked={useDummyData}
+                        onCheckedChange={handleUseDummyDataChange}
+                      />
+                    </div>
+                    
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="api-provider">Data Provider</Label>
+                        <Select
+                          disabled={useDummyData}
+                          value={apiProvider}
+                          onValueChange={handleApiProviderChange}
+                        >
+                          <SelectTrigger id="api-provider" className="w-full">
+                            <SelectValue placeholder="Select Data Provider" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="NSE">NSE India</SelectItem>
+                            <SelectItem value="BSE">BSE India</SelectItem>
+                            <SelectItem value="BINANCE">Binance (Crypto)</SelectItem>
+                            <SelectItem value="COINGECKO">CoinGecko (Crypto)</SelectItem>
+                            <SelectItem value="COINBASE">Coinbase (Crypto)</SelectItem>
+                            <SelectItem value="DUMMY">Demo Data</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Select your preferred market data provider
+                        </p>
+                      </div>
                       
-                      <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="connection-method">Connection Method</Label>
+                        <Select
+                          disabled={useDummyData}
+                          value={connectionMethod}
+                          onValueChange={handleConnectionMethodChange}
+                        >
+                          <SelectTrigger id="connection-method" className="w-full">
+                            <SelectValue placeholder="Select Connection Method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="REST">REST API (Polling)</SelectItem>
+                            <SelectItem value="WEBSOCKET">WebSocket (Real-time)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          WebSockets provide real-time data but may require better network conditions
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 rounded-md border">
+                      <div className="flex justify-between items-center">
                         <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Current Password
-                          </label>
-                          <input
-                            type="password"
-                            className="w-full rounded-md border border-input bg-background px-3 py-2"
-                          />
+                          <h3 className="text-base font-medium">Connection Status</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Current status of your data connection
+                          </p>
                         </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            New Password
-                          </label>
-                          <input
-                            type="password"
-                            className="w-full rounded-md border border-input bg-background px-3 py-2"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Confirm New Password
-                          </label>
-                          <input
-                            type="password"
-                            className="w-full rounded-md border border-input bg-background px-3 py-2"
-                          />
-                        </div>
-                        
-                        <div>
-                          <button className="btn-primary">
-                            Update Password
-                          </button>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-block w-3 h-3 rounded-full ${
+                            connectionStatus.status === 'connected' ? 'bg-success' : 
+                            connectionStatus.status === 'connecting' ? 'bg-warning' : 'bg-destructive'
+                          }`}></span>
+                          <span className="text-sm capitalize">{connectionStatus.status}</span>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="pt-4 border-t border-border">
-                      <h3 className="font-medium mb-4">Two-Factor Authentication</h3>
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-muted-foreground">
-                            Add an extra layer of security to your account
-                          </p>
-                        </div>
-                        <button className="btn-secondary">
-                          Enable 2FA
-                        </button>
-                      </div>
+                    <div className="flex justify-end">
+                      <Button variant="outline" className="mr-2" onClick={() => refreshData()}>
+                        Refresh Data
+                      </Button>
+                      <Button onClick={() => toast({ title: "Settings saved", description: "Data settings have been updated" })}>
+                        Save Settings
+                      </Button>
                     </div>
-                    
-                    <div className="pt-4 border-t border-border">
-                      <h3 className="font-medium mb-4">API Keys</h3>
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-muted-foreground">
-                            Manage API keys for external services
-                          </p>
-                        </div>
-                        <button className="btn-secondary">
-                          Manage Keys
-                        </button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="appearance" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Appearance</CardTitle>
+                  <CardDescription>
+                    Customize the look and feel of your trading interface.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <Label>Theme</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div 
+                        className={`cursor-pointer rounded-md border p-4 transition-all ${theme === 'light' ? 'ring-2 ring-primary' : ''}`}
+                        onClick={() => setTheme('light')}
+                      >
+                        <div className="w-full h-24 rounded bg-white border mb-2"></div>
+                        <p className="text-center font-medium">Light</p>
+                      </div>
+                      <div 
+                        className={`cursor-pointer rounded-md border p-4 transition-all ${theme === 'dark' ? 'ring-2 ring-primary' : ''}`}
+                        onClick={() => setTheme('dark')}
+                      >
+                        <div className="w-full h-24 rounded bg-slate-900 border mb-2"></div>
+                        <p className="text-center font-medium">Dark</p>
+                      </div>
+                      <div 
+                        className={`cursor-pointer rounded-md border p-4 transition-all ${theme === 'system' ? 'ring-2 ring-primary' : ''}`}
+                        onClick={() => setTheme('system')}
+                      >
+                        <div className="w-full h-24 rounded bg-gradient-to-r from-white to-slate-900 border mb-2"></div>
+                        <p className="text-center font-medium">System Default</p>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                  
+                  <div className="space-y-4">
+                    <Label>Accent Color</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      {[
+                        { id: 'blue', color: '#3b82f6', name: 'Blue' },
+                        { id: 'purple', color: '#8b5cf6', name: 'Purple' },
+                        { id: 'green', color: '#10b981', name: 'Green' },
+                        { id: 'orange', color: '#f97316', name: 'Orange' },
+                        { id: 'pink', color: '#ec4899', name: 'Pink' },
+                      ].map((color) => (
+                        <div 
+                          key={color.id}
+                          className={`cursor-pointer rounded-md border p-4 transition-all ${accentColor === color.id ? 'ring-2 ring-primary' : ''}`}
+                          onClick={() => setAccentColor(color.id)}
+                        >
+                          <div 
+                            className="w-full h-12 rounded mb-2" 
+                            style={{ backgroundColor: color.color }}
+                          ></div>
+                          <p className="text-center font-medium">{color.name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <Label>Layout Density</Label>
+                    <RadioGroup defaultValue="comfortable">
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="compact" id="compact" />
+                        <Label htmlFor="compact">Compact</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="comfortable" id="comfortable" />
+                        <Label htmlFor="comfortable">Comfortable</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="spacious" id="spacious" />
+                        <Label htmlFor="spacious">Spacious</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <Label>Chart Default Style</Label>
+                    <RadioGroup defaultValue="candles">
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="candles" id="candles" />
+                        <Label htmlFor="candles">Candlestick</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="line" id="line" />
+                        <Label htmlFor="line">Line Chart</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="area" id="area" />
+                        <Label htmlFor="area">Area Chart</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <Button onClick={handleSaveSettings}>Save Appearance</Button>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
-          </Tabs>
+            
+            {/* Other tab contents can be added here */}
+          </div>
         </div>
-      </main>
-      
+      </div>
       <Footer />
     </div>
   );
 };
-
-// Helper function to get color class for accent buttons
-function getColorClass(color: string): string {
-  switch (color) {
-    case 'blue': return 'bg-blue-500';
-    case 'purple': return 'bg-purple-500';
-    case 'green': return 'bg-green-500';
-    case 'orange': return 'bg-orange-500';
-    case 'pink': return 'bg-pink-500';
-    default: return 'bg-blue-500';
-  }
-}
 
 export default Settings;

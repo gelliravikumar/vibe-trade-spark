@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,7 +7,8 @@
 
 @layer base {
   :root {
-    --background: 220 33% 98%;
+    /* Base colors - Inspired by Robinhood and Google Cloud */
+    --background: 220 25% 98%;
     --foreground: 214 60% 21%;
 
     --card: 0 0% 100%;
@@ -16,7 +17,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 214 60% 21%;
 
-    --primary: 214 60% 21%;
+    --primary: 262 83% 58%; /* Purple theme inspired by financial platforms */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -41,7 +42,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 214 60% 21%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -53,37 +54,38 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  /* Blue theme */
+  /* Blue theme - Inspired by financial apps */
   [data-theme="blue"] {
     --primary: 214 90% 52%;
     --primary-foreground: 210 40% 98%;
   }
 
-  /* Purple theme */
+  /* Purple theme - Default, inspired by Robinhood */
   [data-theme="purple"] {
     --primary: 262 83% 58%;
     --primary-foreground: 210 40% 98%;
   }
 
-  /* Green theme */
+  /* Green theme - Inspired by Fidelity */
   [data-theme="green"] {
     --primary: 142 71% 45%;
     --primary-foreground: 210 40% 98%;
   }
 
-  /* Orange theme */
+  /* Orange theme - Inspired by Public */
   [data-theme="orange"] {
     --primary: 24 94% 50%;
     --primary-foreground: 210 40% 98%;
   }
 
-  /* Pink theme */
+  /* Pink theme - Accent option */
   [data-theme="pink"] {
     --primary: 330 86% 65%;
     --primary-foreground: 210 40% 98%;
   }
 
   .dark {
+    /* Dark mode colors - Sharper and more professional */
     --background: 214 60% 4%;
     --foreground: 210 40% 98%;
 
@@ -93,8 +95,8 @@
     --popover: 214 60% 6%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 214 60% 4%;
+    --primary: 262 83% 58%; /* Keep the purple primary in dark mode */
+    --primary-foreground: 210 40% 98%;
 
     --secondary: 214 60% 10%;
     --secondary-foreground: 210 40% 98%;
@@ -127,6 +129,18 @@
     --sidebar-border: 214 60% 12%;
     --sidebar-ring: 212.7 26.8% 83.9%;
   }
+
+  /* Dark blue theme */
+  .dark[data-theme="blue"] {
+    --primary: 214 90% 52%;
+    --primary-foreground: 210 40% 98%;
+  }
+
+  /* Dark green theme */
+  .dark[data-theme="green"] {
+    --primary: 142 71% 45%;
+    --primary-foreground: 210 40% 98%;
+  }
 }
 
 @layer base {
@@ -140,6 +154,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -154,6 +169,7 @@
     margin-left: auto;
   }
 
+  /* Glass effects */
   .glass-card {
     @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-700/30 shadow-sm;
   }
@@ -162,14 +178,17 @@
     @apply bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-white/20 dark:border-slate-700/30;
   }
 
+  /* Text utilities */
   .text-balance {
     text-wrap: balance;
   }
 
+  /* Common components */
   .pill {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
 
+  /* Button styles */
   .btn-primary {
     @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2;
   }
@@ -182,10 +201,12 @@
     @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2;
   }
 
+  /* Card hover effect */
   .card-hover {
     @apply transition-all duration-300 hover:shadow-md hover:-translate-y-1;
   }
 
+  /* Price movement indicators */
   .price-up {
     @apply text-success animate-fade-in;
   }
@@ -194,6 +215,7 @@
     @apply text-destructive animate-fade-in;
   }
 
+  /* Shimmer loading effect */
   .shimmer {
     @apply animate-shimmer bg-gradient-to-r from-transparent via-white/20 to-transparent bg-[length:200%_100%];
   }
@@ -207,7 +229,7 @@
     @apply absolute top-3 right-3 z-10 flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-lg p-1 shadow-md;
   }
   
-  /* Watchlist enhancements */
+  /* Watchlist enhancements - Robinhood inspired */
   .watchlist-group {
     @apply border rounded-md overflow-hidden mb-2;
   }
@@ -231,6 +253,62 @@
   .watchlist-compact .watchlist-item-change {
     @apply hidden;
   }
+  
+  /* Data widget styling */
+  .data-widget {
+    @apply bg-card rounded-lg shadow-sm p-4 border;
+  }
+  
+  .data-widget-header {
+    @apply flex justify-between items-center mb-3;
+  }
+  
+  .data-widget-title {
+    @apply text-base font-medium;
+  }
+  
+  .data-widget-value {
+    @apply text-2xl font-bold;
+  }
+  
+  .data-widget-change {
+    @apply text-sm font-medium flex items-center gap-1;
+  }
+  
+  /* Table styling enhancements */
+  .table-container {
+    @apply overflow-x-auto rounded-md border;
+  }
+  
+  .table-row-highlight {
+    @apply hover:bg-muted/50 cursor-pointer;
+  }
+  
+  /* Asset card styling */
+  .asset-card {
+    @apply p-4 border rounded-lg flex items-center justify-between hover:bg-muted/30 cursor-pointer transition-colors;
+  }
+  
+  .asset-card-icon {
+    @apply w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium;
+  }
+  
+  /* Toast styling */
+  .toast-success {
+    @apply bg-success/90 text-white;
+  }
+  
+  .toast-error {
+    @apply bg-destructive/90 text-white;
+  }
+  
+  .toast-warning {
+    @apply bg-warning/90 text-black;
+  }
+  
+  .toast-info {
+    @apply bg-primary/90 text-white;
+  }
 }
 
 /* Custom scrollbar styles */
@@ -249,6 +327,19 @@
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-muted-foreground/30;
+}
+
+/* Responsive font sizes */
+@media (max-width: 640px) {
+  h1 {
+    @apply text-2xl;
+  }
+  h2 {
+    @apply text-xl;
+  }
+  .data-widget-value {
+    @apply text-xl;
+  }
 }
 
 /* Custom animations */
@@ -366,4 +457,104 @@
 
 .bg-gradient-professional-5 {
   background: linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%);
+}
+
+/* Google Cloud inspired components */
+.cloud-card {
+  @apply rounded-lg border-0 shadow-md overflow-hidden bg-white dark:bg-slate-800;
+}
+
+.cloud-card-header {
+  @apply bg-primary/5 dark:bg-primary/10 border-b border-primary/10 dark:border-primary/20 p-4;
+}
+
+.cloud-card-body {
+  @apply p-4;
+}
+
+.cloud-chip {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary;
+}
+
+.cloud-btn {
+  @apply inline-flex items-center gap-1 py-2 px-4 rounded-md text-white bg-primary hover:bg-primary/90 transition-colors;
+}
+
+/* Robinhood inspired components */
+.robinhood-card {
+  @apply rounded-xl border-0 shadow-sm overflow-hidden bg-white dark:bg-slate-800;
+}
+
+.robinhood-header {
+  @apply text-lg font-medium mb-1;
+}
+
+.robinhood-value {
+  @apply text-2xl font-bold;
+}
+
+.robinhood-chart {
+  @apply h-24 w-full mt-4;
+}
+
+.robinhood-btn {
+  @apply inline-flex items-center gap-1 py-2 px-4 rounded-full text-white bg-primary hover:bg-primary/90 transition-colors;
+}
+
+.robinhood-list-item {
+  @apply flex items-center justify-between py-3 border-b border-border/50 last:border-0;
+}
+
+/* Tradingview chart customizations */
+.tradingview-wrapper {
+  @apply rounded-lg overflow-hidden border border-border shadow-sm;
+}
+
+.tv-lightweight-charts {
+  @apply rounded-lg overflow-hidden;
+}
+
+/* Table styling enhanced */
+.data-table-container {
+  @apply rounded-lg border border-border overflow-hidden;
+}
+
+.data-table {
+  @apply w-full;
+}
+
+.data-table thead {
+  @apply bg-muted/50;
+}
+
+.data-table th {
+  @apply p-3 text-xs font-medium text-muted-foreground uppercase tracking-wider text-left;
+}
+
+.data-table td {
+  @apply p-3 border-t border-border;
+}
+
+.data-table tr:hover {
+  @apply bg-muted/30;
+}
+
+/* Add font variables */
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Poppins', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Font family application */
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
 }
