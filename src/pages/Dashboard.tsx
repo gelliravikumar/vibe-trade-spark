@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -10,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PortfolioSummary } from '@/components/portfolio/PortfolioSummary';
 import { Button } from '@/components/ui/button';
 import { MiniChart } from '@/components/charts/MiniChart';
-import { DetailedChart } from '@/components/charts/DetailedChart';
+import DetailedChart from '@/components/charts/DetailedChart';
 import { ArrowRight, TrendingUp, TrendingDown, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '@/context/DataContext';
@@ -20,7 +19,6 @@ const Dashboard = () => {
   const { isLoading, stocksData, cryptoData } = useData();
   const [assetType, setAssetType] = useState<'stocks' | 'crypto'>('stocks');
   
-  // Filter top gainers and losers
   const getTopStocks = (type: 'gainers' | 'losers', limit: number = 5) => {
     const data = assetType === 'stocks' ? stocksData : cryptoData;
     const sorted = [...data].sort((a, b) => 
@@ -56,7 +54,6 @@ const Dashboard = () => {
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              {/* Main Chart Section */}
               <Card className="overflow-hidden">
                 <CardHeader className="pb-0">
                   <div className="flex justify-between items-center">
@@ -79,9 +76,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
               
-              {/* Market Movers Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Top Gainers */}
                 <Card>
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-center">
@@ -131,7 +126,6 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
                 
-                {/* Top Losers */}
                 <Card>
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-center">
@@ -184,7 +178,6 @@ const Dashboard = () => {
             </div>
             
             <div className="space-y-6">
-              {/* Portfolio Summary */}
               <Card>
                 <CardHeader>
                   <div className="flex justify-between items-center">
@@ -199,7 +192,7 @@ const Dashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <PortfolioSummary compact={true} />
+                  <PortfolioSummary />
                   
                   <div className="mt-4 space-y-2">
                     <Button 
@@ -222,23 +215,21 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
               
-              {/* Market Summary */}
               <Card>
                 <CardHeader>
                   <CardTitle>Market Summary</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <MarketSummary compact={true} />
+                  <MarketSummary />
                 </CardContent>
               </Card>
               
-              {/* Trending Assets */}
               <Card>
                 <CardHeader>
                   <CardTitle>Trending Assets</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <TrendingAssets compact={true} limit={3} />
+                  <TrendingAssets limit={3} />
                 </CardContent>
               </Card>
             </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Calculator, 
@@ -92,10 +91,8 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
   const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
   const [activeTab, setActiveTab] = useState<'trade' | 'orders' | 'history'>('trade');
   
-  // Get the current position for this asset from the portfolio
   const assetPortfolio = asset ? portfolio[asset.symbol] : null;
   
-  // Filter trade history for this specific asset
   const assetTradeHistory = tradingHistory.filter(
     trade => trade.symbol === asset?.symbol
   ).slice(0, 10);
@@ -167,14 +164,11 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
       return;
     }
     
-    // Calculate the order value
     const orderValue = numQuantity * assetPrice;
     
-    // For market orders, execute immediately
     if (orderMode === 'market') {
       executeTradeNow(numQuantity, assetPrice, orderValue);
     } else {
-      // For limit, stop, and stop-limit orders, add to pending orders
       const now = new Date();
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -201,10 +195,8 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
         newOrder.limitPrice = parseFloat(limitPrice);
       }
       
-      // Add to pending orders
       setPendingOrders([newOrder, ...pendingOrders]);
       
-      // Show toast notification
       toast.success(
         `Order placed: ${orderType === 'buy' ? 'Buy' : 'Sell'} ${quantity} ${asset.symbol} at ${orderMode} price`,
         {
@@ -212,14 +204,11 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
         }
       );
       
-      // If in paper trading mode, reserve the funds/assets
       if (isPaperTrading && orderType === 'buy') {
         // Reserve funds
-        // In a real app, you would track reserved funds separately
       }
     }
     
-    // Reset form after order
     setQuantity('1');
   };
   
@@ -227,7 +216,6 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
     if (!asset) return;
     
     if (isPaperTrading) {
-      // Execute paper trade
       const success = executeTrade(
         asset.symbol,
         orderType === 'buy' ? 'BUY' : 'SELL',
@@ -247,9 +235,7 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
         );
       }
     } else {
-      // Real trading logic
       if (orderType === 'buy') {
-        // Execute buy order
         addPosition(
           asset.symbol, 
           numQuantity, 
@@ -266,20 +252,15 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
           }
         );
       } else {
-        // Execute sell order
         if (!assetPortfolio || assetPortfolio.quantity < numQuantity) {
           toast.error("Cannot sell more than you own");
           return;
         }
         
-        // Update the position
         if (assetPortfolio.quantity === numQuantity) {
-          // Remove the position if selling all
           removePosition(asset.symbol);
         } else {
-          // Update position if selling part
           const newQuantity = assetPortfolio.quantity - numQuantity;
-          // Calculate remaining investment based on average cost method
           const newInvestment = assetPortfolio.totalInvestment * (newQuantity / assetPortfolio.quantity);
           
           updatePosition(
@@ -310,11 +291,9 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
     toast.info("Order canceled successfully");
   };
   
-  // For simulation purposes - would be replaced with real-time price monitoring
   const simulateOrderExecution = (symbol: string) => {
     if (!asset) return;
     
-    // Find executable orders
     const executableOrders = pendingOrders.filter(order => 
       order.symbol === symbol && 
       order.status === 'pending' && 
@@ -324,10 +303,8 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
     
     if (executableOrders.length > 0) {
       executableOrders.forEach(order => {
-        // Execute the order
         executeTradeNow(order.quantity, order.price, order.quantity * order.price);
         
-        // Update the order status
         setPendingOrders(pendingOrders.map(o => 
           o.id === order.id
             ? { ...o, status: 'executed' }
@@ -337,7 +314,6 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
     }
   };
   
-  // For demo/UI purposes only
   useEffect(() => {
     const interval = setInterval(() => {
       if (asset && pendingOrders.filter(o => o.status === 'pending').length > 0) {
@@ -352,11 +328,10 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
     if (!asset) return '0';
     
     if (orderType === 'buy') {
-      const maxBuyAmount = isPaperTrading ? paperBalance : 1000000; // Default to large amount for real trading
+      const maxBuyAmount = isPaperTrading ? paperBalance : 1000000;
       const maxQty = maxBuyAmount / asset.price;
       return maxQty.toFixed(asset.type === 'CRYPTO' ? 6 : 0);
     } else {
-      // For sell, max is what user owns
       return assetPortfolio ? assetPortfolio.quantity.toString() : '0';
     }
   };
@@ -679,7 +654,7 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
                       <div key={order.id} className="bg-muted/30 rounded-lg p-3">
                         <div className="flex justify-between items-center mb-2">
                           <div className="flex items-center">
-                            <Badge variant={order.type === 'BUY' ? 'success' : 'destructive'} className="mr-2">
+                            <Badge variant={order.type === 'BUY' ? 'default' : 'destructive'} className="mr-2">
                               {order.type}
                             </Badge>
                             <span className="font-medium">{order.orderMode.toUpperCase()}</span>
@@ -746,7 +721,7 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
                       <div key={order.id} className="bg-muted/30 rounded-lg p-3">
                         <div className="flex justify-between items-center mb-2">
                           <div className="flex items-center">
-                            <Badge variant={order.type === 'BUY' ? 'success' : 'destructive'} className="mr-2">
+                            <Badge variant={order.type === 'BUY' ? 'default' : 'destructive'} className="mr-2">
                               {order.type}
                             </Badge>
                             <span className="font-medium">{order.orderMode.toUpperCase()}</span>
@@ -795,7 +770,7 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
                   return (
                     <div key={trade.id} className="bg-muted/30 rounded-lg p-3">
                       <div className="flex justify-between items-center mb-2">
-                        <Badge variant={trade.type === 'BUY' ? 'success' : 'destructive'}>
+                        <Badge variant={trade.type === 'BUY' ? 'default' : 'destructive'}>
                           {trade.type}
                         </Badge>
                         <div className="text-sm text-muted-foreground">
