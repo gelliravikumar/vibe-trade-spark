@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -54,8 +53,8 @@ const Index = () => {
     cryptoValue: Object.values(portfolio)
       .filter(pos => pos.type === 'CRYPTO')
       .reduce((sum, pos) => {
-        const cryptoData = cryptoData.find(c => c.symbol === pos.symbol);
-        return sum + (pos.quantity * (cryptoData?.price || pos.avgPrice));
+        const cryptoData2 = cryptoData.find(c => c.symbol === pos.symbol);
+        return sum + (pos.quantity * (cryptoData2?.price || pos.avgPrice));
       }, 0),
   };
   
