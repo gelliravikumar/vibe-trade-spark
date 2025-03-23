@@ -216,14 +216,19 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
     if (!asset) return;
     
     if (isPaperTrading) {
-      const success = executeTrade(
-        asset.symbol,
-        orderType === 'buy' ? 'BUY' : 'SELL',
-        numQuantity,
-        assetPrice,
-        asset.name,
-        asset.type
-      );
+      const tradeData = {
+        id: Date.now().toString(),
+        symbol: asset.symbol,
+        name: asset.name,
+        type: orderType === 'buy' ? 'BUY' : 'SELL' as 'BUY' | 'SELL',
+        quantity: numQuantity,
+        price: assetPrice,
+        total: orderValue,
+        date: new Date(),
+        assetType: asset.type
+      };
+      
+      const success = executeTrade(tradeData);
       
       if (success) {
         const orderAction = orderType === 'buy' ? 'bought' : 'sold';
@@ -724,7 +729,9 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
                             <Badge variant={order.type === 'BUY' ? 'default' : 'destructive'} className="mr-2">
                               {order.type}
                             </Badge>
-                            <span className="font-medium">{order.orderMode.toUpperCase()}</span>
+                            <div className="text-sm text-muted-foreground">
+                              {order.createdAt.toLocaleDateString()} {order.createdAt.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </div>
                           </div>
                           <Badge variant={
                             order.status === 'executed' ? 'outline' : 
@@ -743,9 +750,6 @@ export const TradingForm: React.FC<TradingFormProps> = ({ asset }) => {
                           
                           <div className="text-muted-foreground">Total Value:</div>
                           <div className="text-right">₹{(order.quantity * order.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                          
-                          <div className="text-muted-foreground">Date:</div>
-                          <div className="text-right">{order.createdAt.toLocaleDateString()}</div>
                         </div>
                       </div>
                     ))

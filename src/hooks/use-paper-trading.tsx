@@ -1,389 +1,164 @@
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { useData } from '@/context/DataContext';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Define the types for our context
-export type Trade = {
+type TradeType = 'BUY' | 'SELL';
+type AssetType = 'STOCK' | 'CRYPTO' | 'ETF' | 'FOREX';
+
+interface Trade {
   id: string;
   symbol: string;
-  type: 'BUY' | 'SELL';
+  name: string;
+  type: TradeType;
   quantity: number;
   price: number;
-  timestamp: number;
-  value: number;
-  orderType: 'MARKET' | 'LIMIT' | 'STOP' | 'STOP_LIMIT';
-  status: 'COMPLETED' | 'PENDING' | 'CANCELLED';
-  limitPrice?: number;
-  stopPrice?: number;
-  date?: number; // For compatibility with existing code
-  name?: string; // For displaying asset name
-  total?: number; // For compatibility with existing code
-};
+  total: number;
+  date: Date;
+  assetType: AssetType;
+}
 
-export type Position = {
-  symbol: string;
-  quantity: number;
-  avgPrice: number;
-  type: 'STOCK' | 'CRYPTO';
-};
-
-export type PaperTradingContextType = {
+interface PaperTradingContextType {
+  paperBalance: number;
+  portfolioValue: number;
   isPaperTrading: boolean;
   setIsPaperTrading: (value: boolean) => void;
-  paperBalance: number;
-  setPaperBalance: (balance: number) => void;
-  trades: Trade[];
-  addTrade: (trade: Omit<Trade, 'id' | 'timestamp'>) => void;
-  pendingOrders: Trade[];
-  cancelOrder: (orderId: string) => void;
-  executeOrder: (orderId: string, currentPrice: number) => void;
-  positions: Record<string, Position>;
-  portfolioValue: number;
+  executeTrade: (trade: Trade) => boolean;
   resetPaperTrading: () => void;
-  
-  // Additional functions needed for compatibility with existing code
   resetAccount: () => void;
   addFunds: (amount: number) => void;
   tradingHistory: Trade[];
-  executeTrade: (tradeDetails: Omit<Trade, 'id' | 'timestamp' | 'status' | 'value'>) => void;
-};
+}
 
-// Create context with default values
+const initialBalance = 1000000; // 10 Lakh rupees
+
 const PaperTradingContext = createContext<PaperTradingContextType>({
+  paperBalance: initialBalance,
+  portfolioValue: 0,
   isPaperTrading: true,
   setIsPaperTrading: () => {},
-  paperBalance: 1000000, // 10 Lakhs
-  setPaperBalance: () => {},
-  trades: [],
-  addTrade: () => {},
-  pendingOrders: [],
-  cancelOrder: () => {},
-  executeOrder: () => {},
-  positions: {},
-  portfolioValue: 0,
+  executeTrade: () => false,
   resetPaperTrading: () => {},
-  
-  // Additional functions needed for compatibility with existing code
   resetAccount: () => {},
   addFunds: () => {},
   tradingHistory: [],
-  executeTrade: () => {},
 });
 
-// Create provider component
 export const PaperTradingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // States
-  const [isPaperTrading, setIsPaperTrading] = useState<boolean>(true);
-  const [paperBalance, setPaperBalance] = useState<number>(1000000); // 10 Lakhs
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [positions, setPositions] = useState<Record<string, Position>>({});
-  const { stocksData, cryptoData } = useData();
+  const [paperBalance, setPaperBalance] = useState<number>(() => {
+    const savedBalance = localStorage.getItem('paperBalance');
+    return savedBalance ? parseFloat(savedBalance) : initialBalance;
+  });
   
-  // Calculate portfolio value based on current prices
-  const portfolioValue = React.useMemo(() => {
-    return Object.values(positions).reduce((total, position) => {
-      const assetData = position.type === 'STOCK'
-        ? stocksData.find(s => s.symbol === position.symbol)
-        : cryptoData.find(c => c.symbol === position.symbol);
-        
-      const currentPrice = assetData?.price || position.avgPrice;
-      return total + (position.quantity * currentPrice);
-    }, 0);
-  }, [positions, stocksData, cryptoData]);
+  const [isPaperTrading, setIsPaperTrading] = useState<boolean>(() => {
+    const savedMode = localStorage.getItem('isPaperTrading');
+    return savedMode ? savedMode === 'true' : true;
+  });
   
-  // Get pending orders
-  const pendingOrders = trades.filter(trade => trade.status === 'PENDING');
+  const [portfolioValue, setPortfolioValue] = useState<number>(0);
   
-  // Trading history - for compatibility with existing code
-  const tradingHistory = trades.map(trade => ({
-    ...trade,
-    date: trade.date || trade.timestamp,
-    name: trade.name || (
-      stocksData.find(s => s.symbol === trade.symbol)?.name ||
-      cryptoData.find(c => c.symbol === trade.symbol)?.name ||
-      trade.symbol
-    ),
-    total: trade.total || trade.value
-  }));
+  const [tradingHistory, setTradingHistory] = useState<Trade[]>(() => {
+    const savedHistory = localStorage.getItem('tradingHistory');
+    return savedHistory ? JSON.parse(savedHistory) : [];
+  });
   
-  // Add a new trade
-  const addTrade = (trade: Omit<Trade, 'id' | 'timestamp'>) => {
-    const newTrade: Trade = {
-      ...trade,
-      id: Math.random().toString(36).substring(2, 11),
-      timestamp: Date.now(),
-    };
-    
-    // If it's a market order, execute it immediately
-    if (trade.orderType === 'MARKET') {
-      // Update positions
-      const symbolKey = trade.symbol;
-      
-      if (trade.type === 'BUY') {
-        // Deduct from balance
-        setPaperBalance(prevBalance => prevBalance - trade.value);
-        
-        // Update positions
-        setPositions(prevPositions => {
-          const existingPosition = prevPositions[symbolKey];
-          
-          if (existingPosition) {
-            // Update existing position
-            const newQuantity = existingPosition.quantity + trade.quantity;
-            const newAvgPrice = ((existingPosition.quantity * existingPosition.avgPrice) + trade.value) / newQuantity;
-            
-            return {
-              ...prevPositions,
-              [symbolKey]: {
-                ...existingPosition,
-                quantity: newQuantity,
-                avgPrice: newAvgPrice,
-              }
-            };
-          } else {
-            // Create new position
-            return {
-              ...prevPositions,
-              [symbolKey]: {
-                symbol: trade.symbol,
-                quantity: trade.quantity,
-                avgPrice: trade.price,
-                type: symbolKey.length <= 5 ? 'STOCK' : 'CRYPTO',
-              }
-            };
-          }
-        });
-      } else if (trade.type === 'SELL') {
-        // Update positions first
-        setPositions(prevPositions => {
-          const existingPosition = prevPositions[symbolKey];
-          
-          if (existingPosition && existingPosition.quantity >= trade.quantity) {
-            const newQuantity = existingPosition.quantity - trade.quantity;
-            
-            // If selling all, remove the position
-            if (newQuantity <= 0) {
-              const { [symbolKey]: _, ...rest } = prevPositions;
-              return rest;
-            }
-            
-            // Otherwise update the position quantity
-            return {
-              ...prevPositions,
-              [symbolKey]: {
-                ...existingPosition,
-                quantity: newQuantity,
-              }
-            };
-          }
-          
-          return prevPositions;
-        });
-        
-        // Add to balance
-        setPaperBalance(prevBalance => prevBalance + trade.value);
+  useEffect(() => {
+    localStorage.setItem('paperBalance', paperBalance.toString());
+    localStorage.setItem('isPaperTrading', isPaperTrading.toString());
+    localStorage.setItem('tradingHistory', JSON.stringify(tradingHistory));
+  }, [paperBalance, isPaperTrading, tradingHistory]);
+  
+  // Function to execute a paper trade
+  const executeTrade = (trade: Trade): boolean => {
+    if (trade.type === 'BUY') {
+      if (trade.total > paperBalance) {
+        return false; // Not enough balance
       }
       
-      // Add the completed trade to history
-      setTrades(prevTrades => [
-        ...prevTrades, 
-        { ...newTrade, status: 'COMPLETED' }
-      ]);
-    } else {
-      // For limit, stop, or stop-limit orders, add to pending orders
-      setTrades(prevTrades => [
-        ...prevTrades, 
-        { ...newTrade, status: 'PENDING' }
-      ]);
-    }
-  };
-  
-  // Execute trade function (simplified wrapper for addTrade) - for compatibility with existing code
-  const executeTrade = (tradeDetails: Omit<Trade, 'id' | 'timestamp' | 'status' | 'value'>) => {
-    const { symbol, type, quantity, price, orderType, limitPrice, stopPrice } = tradeDetails;
-    const value = quantity * price;
-    
-    addTrade({
-      symbol,
-      type,
-      quantity,
-      price,
-      value,
-      orderType,
-      limitPrice,
-      stopPrice,
-      status: 'PENDING'
-    });
-  };
-  
-  // Cancel a pending order
-  const cancelOrder = (orderId: string) => {
-    setTrades(prevTrades => 
-      prevTrades.map(trade => 
-        trade.id === orderId 
-          ? { ...trade, status: 'CANCELLED' }
-          : trade
-      )
-    );
-  };
-  
-  // Execute a pending order based on current price
-  const executeOrder = (orderId: string, currentPrice: number) => {
-    // Find the order
-    const order = trades.find(trade => trade.id === orderId);
-    
-    if (!order || order.status !== 'PENDING') return;
-    
-    // Execute the trade at the current price
-    const executedTrade: Trade = {
-      ...order,
-      price: currentPrice,
-      value: order.quantity * currentPrice,
-      status: 'COMPLETED'
-    };
-    
-    // Update the trades list
-    setTrades(prevTrades => 
-      prevTrades.map(trade => 
-        trade.id === orderId ? executedTrade : trade
-      )
-    );
-    
-    // Update positions and balance
-    const symbolKey = order.symbol;
-    
-    if (order.type === 'BUY') {
-      // Deduct from balance
-      setPaperBalance(prevBalance => prevBalance - executedTrade.value);
+      setPaperBalance(prev => prev - trade.total);
       
-      // Update positions
-      setPositions(prevPositions => {
-        const existingPosition = prevPositions[symbolKey];
-        
-        if (existingPosition) {
-          // Update existing position
-          const newQuantity = existingPosition.quantity + order.quantity;
-          const newAvgPrice = ((existingPosition.quantity * existingPosition.avgPrice) + executedTrade.value) / newQuantity;
-          
-          return {
-            ...prevPositions,
-            [symbolKey]: {
-              ...existingPosition,
-              quantity: newQuantity,
-              avgPrice: newAvgPrice,
-            }
-          };
-        } else {
-          // Create new position
-          return {
-            ...prevPositions,
-            [symbolKey]: {
-              symbol: order.symbol,
-              quantity: order.quantity,
-              avgPrice: currentPrice,
-              type: symbolKey.length <= 5 ? 'STOCK' : 'CRYPTO',
-            }
-          };
-        }
-      });
-    } else if (order.type === 'SELL') {
-      // Update positions first
-      setPositions(prevPositions => {
-        const existingPosition = prevPositions[symbolKey];
-        
-        if (existingPosition && existingPosition.quantity >= order.quantity) {
-          const newQuantity = existingPosition.quantity - order.quantity;
-          
-          // If selling all, remove the position
-          if (newQuantity <= 0) {
-            const { [symbolKey]: _, ...rest } = prevPositions;
-            return rest;
-          }
-          
-          // Otherwise update the position quantity
-          return {
-            ...prevPositions,
-            [symbolKey]: {
-              ...existingPosition,
-              quantity: newQuantity,
-            }
-          };
-        }
-        
-        return prevPositions;
-      });
+      setTradingHistory(prev => [
+        {
+          ...trade,
+          id: Date.now().toString(),
+          date: new Date(),
+        },
+        ...prev
+      ]);
       
-      // Add to balance
-      setPaperBalance(prevBalance => prevBalance + executedTrade.value);
+      return true;
+    } else if (trade.type === 'SELL') {
+      // Check if user has the asset to sell
+      const ownedAssets = tradingHistory.filter(
+        t => t.symbol === trade.symbol && t.type === 'BUY'
+      ).reduce((sum, t) => sum + t.quantity, 0);
+      
+      const soldAssets = tradingHistory.filter(
+        t => t.symbol === trade.symbol && t.type === 'SELL'
+      ).reduce((sum, t) => sum + t.quantity, 0);
+      
+      const availableToSell = ownedAssets - soldAssets;
+      
+      if (availableToSell < trade.quantity) {
+        return false; // Not enough assets to sell
+      }
+      
+      setPaperBalance(prev => prev + trade.total);
+      
+      setTradingHistory(prev => [
+        {
+          ...trade,
+          id: Date.now().toString(),
+          date: new Date(),
+        },
+        ...prev
+      ]);
+      
+      return true;
     }
+    
+    return false;
   };
   
-  // Reset paper trading function
+  // Reset paper trading account to initial state
   const resetPaperTrading = () => {
-    setPaperBalance(1000000); // Reset to 10 Lakhs
-    setTrades([]); // Clear all trades
-    setPositions({}); // Clear all positions
+    setPaperBalance(initialBalance);
+    setTradingHistory([]);
   };
   
-  // Alias for resetPaperTrading (for compatibility)
-  const resetAccount = () => resetPaperTrading();
+  // Alias for resetPaperTrading for compatibility
+  const resetAccount = () => {
+    resetPaperTrading();
+  };
   
-  // Add funds function (for compatibility)
+  // Add funds to paper trading account
   const addFunds = (amount: number) => {
-    setPaperBalance(prevBalance => prevBalance + amount);
+    setPaperBalance(prev => prev + amount);
   };
   
-  // Load saved data from localStorage
+  // Calculate portfolio value based on trading history
   useEffect(() => {
-    const savedIsPaperTrading = localStorage.getItem('isPaperTrading');
-    const savedPaperBalance = localStorage.getItem('paperBalance');
-    const savedTrades = localStorage.getItem('paperTrades');
-    const savedPositions = localStorage.getItem('paperPositions');
-    
-    if (savedIsPaperTrading) {
-      setIsPaperTrading(JSON.parse(savedIsPaperTrading));
-    }
-    
-    if (savedPaperBalance) {
-      setPaperBalance(JSON.parse(savedPaperBalance));
-    }
-    
-    if (savedTrades) {
-      setTrades(JSON.parse(savedTrades));
-    }
-    
-    if (savedPositions) {
-      setPositions(JSON.parse(savedPositions));
-    }
-  }, []);
-  
-  // Save data to localStorage when it changes
-  useEffect(() => {
-    localStorage.setItem('isPaperTrading', JSON.stringify(isPaperTrading));
-    localStorage.setItem('paperBalance', JSON.stringify(paperBalance));
-    localStorage.setItem('paperTrades', JSON.stringify(trades));
-    localStorage.setItem('paperPositions', JSON.stringify(positions));
-  }, [isPaperTrading, paperBalance, trades, positions]);
+    // This is a simplified calculation that doesn't account for current market prices
+    // In a real app, you would fetch current prices and calculate the value
+    const buys = tradingHistory.filter(t => t.type === 'BUY')
+      .reduce((sum, t) => sum + t.total, 0);
+      
+    const sells = tradingHistory.filter(t => t.type === 'SELL')
+      .reduce((sum, t) => sum + t.total, 0);
+      
+    setPortfolioValue(buys - sells);
+  }, [tradingHistory]);
   
   return (
     <PaperTradingContext.Provider 
       value={{ 
-        isPaperTrading, 
-        setIsPaperTrading, 
         paperBalance, 
-        setPaperBalance,
-        trades,
-        addTrade,
-        pendingOrders,
-        cancelOrder,
-        executeOrder,
-        positions,
         portfolioValue,
+        isPaperTrading, 
+        setIsPaperTrading,
+        executeTrade,
         resetPaperTrading,
         resetAccount,
         addFunds,
-        tradingHistory,
-        executeTrade
+        tradingHistory
       }}
     >
       {children}
@@ -391,13 +166,4 @@ export const PaperTradingProvider: React.FC<{ children: React.ReactNode }> = ({ 
   );
 };
 
-// Custom hook to use the paper trading context
-export const usePaperTrading = () => {
-  const context = useContext(PaperTradingContext);
-  
-  if (context === undefined) {
-    throw new Error('usePaperTrading must be used within a PaperTradingProvider');
-  }
-  
-  return context;
-};
+export const usePaperTrading = () => useContext(PaperTradingContext);

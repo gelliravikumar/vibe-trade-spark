@@ -14,6 +14,7 @@ interface MiniChartProps {
   showTooltip?: boolean;
   positiveColor?: string;
   negativeColor?: string;
+  changePercent?: number;
 }
 
 // Generate random price history if none provided
@@ -46,10 +47,13 @@ export const MiniChart: React.FC<MiniChartProps> = ({
   showChart = true,
   showTooltip = false,
   positiveColor = 'var(--success)',
-  negativeColor = 'var(--destructive)'
+  negativeColor = 'var(--destructive)',
+  changePercent
 }) => {
   const [chartData, setChartData] = useState<{ price: number }[]>([]);
-  const chartColor = isPositive ? positiveColor : negativeColor;
+  // If changePercent is provided, use it to determine if the chart is positive or negative
+  const effectiveIsPositive = changePercent !== undefined ? changePercent >= 0 : isPositive;
+  const chartColor = effectiveIsPositive ? positiveColor : negativeColor;
   
   useEffect(() => {
     if (data && data.length > 0) {
