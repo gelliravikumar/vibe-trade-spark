@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useData } from '@/context/DataContext';
 
@@ -14,6 +15,9 @@ export type Trade = {
   status: 'COMPLETED' | 'PENDING' | 'CANCELLED';
   limitPrice?: number;
   stopPrice?: number;
+  date?: number; // For compatibility with existing code
+  name?: string; // For displaying asset name
+  total?: number; // For compatibility with existing code
 };
 
 export type Position = {
@@ -36,6 +40,12 @@ export type PaperTradingContextType = {
   positions: Record<string, Position>;
   portfolioValue: number;
   resetPaperTrading: () => void;
+  
+  // Additional functions needed for compatibility with existing code
+  resetAccount: () => void;
+  addFunds: (amount: number) => void;
+  tradingHistory: Trade[];
+  executeTrade: (tradeDetails: Omit<Trade, 'id' | 'timestamp' | 'status' | 'value'>) => void;
 };
 
 // Create context with default values
@@ -52,6 +62,12 @@ const PaperTradingContext = createContext<PaperTradingContextType>({
   positions: {},
   portfolioValue: 0,
   resetPaperTrading: () => {},
+  
+  // Additional functions needed for compatibility with existing code
+  resetAccount: () => {},
+  addFunds: () => {},
+  tradingHistory: [],
+  executeTrade: () => {},
 });
 
 // Create provider component
@@ -77,6 +93,18 @@ export const PaperTradingProvider: React.FC<{ children: React.ReactNode }> = ({ 
   
   // Get pending orders
   const pendingOrders = trades.filter(trade => trade.status === 'PENDING');
+  
+  // Trading history - for compatibility with existing code
+  const tradingHistory = trades.map(trade => ({
+    ...trade,
+    date: trade.date || trade.timestamp,
+    name: trade.name || (
+      stocksData.find(s => s.symbol === trade.symbol)?.name ||
+      cryptoData.find(c => c.symbol === trade.symbol)?.name ||
+      trade.symbol
+    ),
+    total: trade.total || trade.value
+  }));
   
   // Add a new trade
   const addTrade = (trade: Omit<Trade, 'id' | 'timestamp'>) => {
@@ -168,6 +196,24 @@ export const PaperTradingProvider: React.FC<{ children: React.ReactNode }> = ({ 
         { ...newTrade, status: 'PENDING' }
       ]);
     }
+  };
+  
+  // Execute trade function (simplified wrapper for addTrade) - for compatibility with existing code
+  const executeTrade = (tradeDetails: Omit<Trade, 'id' | 'timestamp' | 'status' | 'value'>) => {
+    const { symbol, type, quantity, price, orderType, limitPrice, stopPrice } = tradeDetails;
+    const value = quantity * price;
+    
+    addTrade({
+      symbol,
+      type,
+      quantity,
+      price,
+      value,
+      orderType,
+      limitPrice,
+      stopPrice,
+      status: 'PENDING'
+    });
   };
   
   // Cancel a pending order
@@ -279,6 +325,14 @@ export const PaperTradingProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setPositions({}); // Clear all positions
   };
   
+  // Alias for resetPaperTrading (for compatibility)
+  const resetAccount = () => resetPaperTrading();
+  
+  // Add funds function (for compatibility)
+  const addFunds = (amount: number) => {
+    setPaperBalance(prevBalance => prevBalance + amount);
+  };
+  
   // Load saved data from localStorage
   useEffect(() => {
     const savedIsPaperTrading = localStorage.getItem('isPaperTrading');
@@ -325,7 +379,11 @@ export const PaperTradingProvider: React.FC<{ children: React.ReactNode }> = ({ 
         executeOrder,
         positions,
         portfolioValue,
-        resetPaperTrading
+        resetPaperTrading,
+        resetAccount,
+        addFunds,
+        tradingHistory,
+        executeTrade
       }}
     >
       {children}

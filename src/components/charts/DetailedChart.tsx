@@ -41,11 +41,15 @@ const DetailedChart: React.FC<DetailedChartProps> = ({
   fullWidth = false,
 }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const { chartData } = useData();
+  const { stocksData, cryptoData } = useData();
   
-  // Use provided data or get data from context based on symbol and timeFrame
+  // Use provided data or generate dummy data based on symbol
   const data = providedData || 
-    (chartData[symbol] ? chartData[symbol][timeFrame] || [] : []);
+    (symbol ? Array.from({ length: 20 }, (_, i) => ({
+      date: `${i + 1}/10`,
+      close: Math.random() * 1000 + 500,
+      volume: Math.random() * 5000 + 1000,
+    })) : []);
   
   const toggleFullScreen = () => {
     setIsFullScreen(!isFullScreen);

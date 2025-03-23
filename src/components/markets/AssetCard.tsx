@@ -16,6 +16,7 @@ interface AssetCardProps {
   changePercent: number;
   type: 'STOCK' | 'CRYPTO' | 'ETF' | 'FOREX';
   compact?: boolean;
+  className?: string;
 }
 
 export const AssetCard: React.FC<AssetCardProps> = ({
@@ -26,7 +27,8 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   change,
   changePercent,
   type,
-  compact = false
+  compact = false,
+  className = ''
 }) => {
   const navigate = useNavigate();
   const isPositive = changePercent >= 0;
@@ -38,7 +40,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   if (compact) {
     return (
       <div 
-        className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer"
+        className={`flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer ${className}`}
         onClick={handleCardClick}
       >
         <div className="flex items-center">
@@ -62,7 +64,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   }
   
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col" onClick={handleCardClick}>
+    <Card className={`overflow-hidden hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col ${className}`} onClick={handleCardClick}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
@@ -76,7 +78,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
       </CardHeader>
       <CardContent className="py-2 flex-grow">
         <div className="h-24">
-          <MiniChart symbol={symbol} change={changePercent} />
+          <MiniChart symbol={symbol} changePercent={changePercent} />
         </div>
       </CardContent>
       <CardFooter className="pt-0 pb-4 flex flex-col items-start">
