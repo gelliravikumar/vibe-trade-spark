@@ -1,19 +1,21 @@
 
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { TrendingUp, TrendingDown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import { MiniChart } from '@/components/charts/MiniChart';
-import { ArrowUp, ArrowDown } from 'lucide-react';
 
 interface AssetCardProps {
   symbol: string;
   name: string;
   price: number;
-  previousPrice?: number;
+  previousPrice: number;
   change: number;
   changePercent: number;
-  type: 'STOCK' | 'CRYPTO';
-  chartData?: { price: number }[];
-  className?: string;
+  type: 'STOCK' | 'CRYPTO' | 'ETF' | 'FOREX';
+  compact?: boolean;
 }
 
 export const AssetCard: React.FC<AssetCardProps> = ({
@@ -24,89 +26,71 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   change,
   changePercent,
   type,
-  chartData,
-  className = '',
+  compact = false
 }) => {
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [priceDirection, setPriceDirection] = useState<'up' | 'down' | null>(null);
+  const navigate = useNavigate();
+  const isPositive = changePercent >= 0;
   
-  // Handle price changes for animation
-  useEffect(() => {
-    if (previousPrice && previousPrice !== price) {
-      setPriceDirection(price > previousPrice ? 'up' : 'down');
-      setIsAnimating(true);
-      
-      const timer = setTimeout(() => {
-        setIsAnimating(false);
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [price, previousPrice]);
-  
-  const isPositive = change >= 0;
-  
-  // Safe formatting to handle null/undefined
-  const formatPrice = (value: number | undefined | null) => {
-    if (value === undefined || value === null) return '0.00';
-    return value.toLocaleString('en-IN', {
-      maximumFractionDigits: value < 1 ? 6 : 2,
-      minimumFractionDigits: value < 1 ? 2 : 2,
-    });
+  const handleCardClick = () => {
+    navigate(`/trade/${symbol}`);
   };
-  
-  const formatChange = (value: number | undefined | null) => {
-    if (value === undefined || value === null) return '0.00';
-    return value.toFixed(2);
-  };
-  
-  return (
-    <Link
-      to={`/trade/${symbol}`}
-      className={`glass-card rounded-lg p-4 transition-all duration-300 hover:translate-y-[-4px] hover:shadow-md ${className}`}
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <h3 className="font-medium">{symbol}</h3>
-          <p className="text-sm text-muted-foreground">{name}</p>
-        </div>
-        <div className="pill bg-secondary text-secondary-foreground">
-          {type}
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4 mb-2">
-        <div>
-          <p 
-            className={`text-2xl font-semibold ${
-              isAnimating ? (priceDirection === 'up' ? 'price-up' : 'price-down') : ''
-            }`}
-          >
-            {type === 'CRYPTO' && '₹'}
-            {formatPrice(price)}
-          </p>
-          
-          <div className="flex items-center space-x-1 mt-1">
-            {isPositive ? (
-              <ArrowUp className="w-4 h-4 text-success" />
-            ) : (
-              <ArrowDown className="w-4 h-4 text-destructive" />
-            )}
-            <span className={isPositive ? 'text-success' : 'text-destructive'}>
-              {isPositive ? '+' : ''}
-              {formatChange(change)} ({formatChange(changePercent)}%)
-            </span>
+
+  if (compact) {
+    return (
+      <div 
+        className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer"
+        onClick={handleCardClick}
+      >
+        <div className="flex items-center">
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+            <span className="text-primary font-medium">{symbol.charAt(0)}</span>
+          </div>
+          <div>
+            <div className="font-medium">{symbol}</div>
+            <div className="text-sm text-muted-foreground">{name}</div>
           </div>
         </div>
-        
-        <div className="h-24">
-          <MiniChart 
-            data={chartData} 
-            isPositive={isPositive} 
-            height={80}
-          />
+        <div className="text-right">
+          <div>₹{price.toLocaleString()}</div>
+          <div className={`flex items-center justify-end ${isPositive ? 'text-success' : 'text-destructive'}`}>
+            {isPositive ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+            {isPositive ? '+' : ''}{changePercent.toFixed(2)}%
+          </div>
         </div>
       </div>
-    </Link>
+    );
+  }
+  
+  return (
+    <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col" onClick={handleCardClick}>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-xl">{symbol}</CardTitle>
+            <p className="text-sm text-muted-foreground">{name}</p>
+          </div>
+          <Badge variant={type === 'CRYPTO' ? 'secondary' : 'outline'}>
+            {type}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="py-2 flex-grow">
+        <div className="h-24">
+          <MiniChart symbol={symbol} change={changePercent} />
+        </div>
+      </CardContent>
+      <CardFooter className="pt-0 pb-4 flex flex-col items-start">
+        <div className="text-2xl font-bold mb-1">₹{price.toLocaleString()}</div>
+        <div className="flex items-center">
+          <div className={`flex items-center ${isPositive ? 'text-success' : 'text-destructive'} mr-2`}>
+            {isPositive ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
+            {isPositive ? '+' : ''}{changePercent.toFixed(2)}%
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {isPositive ? '+' : ''}₹{change.toFixed(2)}
+          </div>
+        </div>
+      </CardFooter>
+    </Card>
   );
 };

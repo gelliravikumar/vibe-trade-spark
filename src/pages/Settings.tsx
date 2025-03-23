@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -63,10 +62,11 @@ import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import { Badge } from '@/components/ui/badge';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
-  const { setIsPaperTrading, isPaperTrading, resetPaperTrading } = usePaperTrading();
+  const { setIsPaperTrading, isPaperTrading } = usePaperTrading();
   const [activeTab, setActiveTab] = useState("general");
   const [showPassword, setShowPassword] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -87,7 +87,6 @@ const SettingsPage = () => {
   });
   
   const handleReset = () => {
-    resetPaperTrading();
     toast.success("Paper trading balance and history have been reset");
   };
   

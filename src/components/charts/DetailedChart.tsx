@@ -14,9 +14,10 @@ import {
 } from 'recharts';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useData } from '@/context/DataContext';
 
 export interface DetailedChartProps {
-  data: Array<{
+  data?: Array<{
     date: string;
     close: number;
     volume: number;
@@ -24,14 +25,27 @@ export interface DetailedChartProps {
   }>;
   height?: number;
   width?: string | number;
+  symbol?: string;
+  timeFrame?: string;
+  showControls?: boolean;
+  fullWidth?: boolean;
 }
 
 const DetailedChart: React.FC<DetailedChartProps> = ({
-  data,
+  data: providedData,
   height = 400,
   width = '100%',
+  symbol = 'NIFTY',
+  timeFrame = '1D',
+  showControls = false,
+  fullWidth = false,
 }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const { chartData } = useData();
+  
+  // Use provided data or get data from context based on symbol and timeFrame
+  const data = providedData || 
+    (chartData[symbol] ? chartData[symbol][timeFrame] || [] : []);
   
   const toggleFullScreen = () => {
     setIsFullScreen(!isFullScreen);
@@ -41,7 +55,7 @@ const DetailedChart: React.FC<DetailedChartProps> = ({
     <div className={`relative ${isFullScreen ? 'fixed inset-0 z-50 bg-background p-4' : ''}`}>
       {isFullScreen && (
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Detailed Price Chart</h2>
+          <h2 className="text-xl font-semibold">Detailed Price Chart - {symbol}</h2>
           <Button 
             variant="ghost"
             size="icon"
@@ -54,7 +68,7 @@ const DetailedChart: React.FC<DetailedChartProps> = ({
       )}
       
       <div className="relative">
-        {!isFullScreen && (
+        {!isFullScreen && showControls && (
           <Button 
             variant="ghost"
             size="icon"
