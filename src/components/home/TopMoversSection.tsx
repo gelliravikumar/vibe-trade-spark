@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,6 +9,7 @@ import { useData } from '@/context/DataContext';
 export const TopMoversSection: React.FC = () => {
   const navigate = useNavigate();
   const { stocksData, cryptoData } = useData();
+  const [activeTab, setActiveTab] = useState<string>("stocks");
   
   // Top gainers and losers in stocks
   const topGainersStocks = [...stocksData]
@@ -32,7 +33,7 @@ export const TopMoversSection: React.FC = () => {
     <section className="mb-8">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Top Movers</h2>
-        <Tabs defaultValue="stocks">
+        <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="stocks">
           <TabsList>
             <TabsTrigger value="stocks">Stocks</TabsTrigger>
             <TabsTrigger value="crypto">Crypto</TabsTrigger>
@@ -40,41 +41,43 @@ export const TopMoversSection: React.FC = () => {
         </Tabs>
       </div>
       
-      <TabsContent value="stocks" className="mt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <GainerLoserCard 
-            title="Top Gainers"
-            assets={topGainersStocks}
-            isGainer={true}
-            onAssetClick={(symbol) => navigate(`/trade/${symbol}`)}
-          />
-          
-          <GainerLoserCard 
-            title="Top Losers"
-            assets={topLosersStocks}
-            isGainer={false}
-            onAssetClick={(symbol) => navigate(`/trade/${symbol}`)}
-          />
-        </div>
-      </TabsContent>
-      
-      <TabsContent value="crypto" className="mt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <GainerLoserCard 
-            title="Top Crypto Gainers"
-            assets={topGainersCrypto}
-            isGainer={true}
-            onAssetClick={(symbol) => navigate(`/trade/${symbol}`)}
-          />
-          
-          <GainerLoserCard 
-            title="Top Crypto Losers"
-            assets={topLosersCrypto}
-            isGainer={false}
-            onAssetClick={(symbol) => navigate(`/trade/${symbol}`)}
-          />
-        </div>
-      </TabsContent>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsContent value="stocks" className="mt-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <GainerLoserCard 
+              title="Top Gainers"
+              assets={topGainersStocks}
+              isGainer={true}
+              onAssetClick={(symbol) => navigate(`/trade/${symbol}`)}
+            />
+            
+            <GainerLoserCard 
+              title="Top Losers"
+              assets={topLosersStocks}
+              isGainer={false}
+              onAssetClick={(symbol) => navigate(`/trade/${symbol}`)}
+            />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="crypto" className="mt-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <GainerLoserCard 
+              title="Top Crypto Gainers"
+              assets={topGainersCrypto}
+              isGainer={true}
+              onAssetClick={(symbol) => navigate(`/trade/${symbol}`)}
+            />
+            
+            <GainerLoserCard 
+              title="Top Crypto Losers"
+              assets={topLosersCrypto}
+              isGainer={false}
+              onAssetClick={(symbol) => navigate(`/trade/${symbol}`)}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
     </section>
   );
 };
