@@ -33,16 +33,16 @@ export const TopMoversSection: React.FC = () => {
     <section className="mb-8">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Top Movers</h2>
-        <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="stocks">
-          <TabsList>
-            <TabsTrigger value="stocks">Stocks</TabsTrigger>
-            <TabsTrigger value="crypto">Crypto</TabsTrigger>
-          </TabsList>
-        </Tabs>
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsContent value="stocks" className="mt-0">
+      {/* Use a single Tabs component to manage both the tab selection and content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="stocks">
+        <TabsList>
+          <TabsTrigger value="stocks">Stocks</TabsTrigger>
+          <TabsTrigger value="crypto">Crypto</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="stocks" className="mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <GainerLoserCard 
               title="Top Gainers"
@@ -60,7 +60,7 @@ export const TopMoversSection: React.FC = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="crypto" className="mt-0">
+        <TabsContent value="crypto" className="mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <GainerLoserCard 
               title="Top Crypto Gainers"
